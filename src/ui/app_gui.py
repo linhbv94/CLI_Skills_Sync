@@ -1,383 +1,623 @@
-import sys
 import tkinter as tk
-from tkinter import filedialog, messagebox
+import tkinter.font as tkfont
 from pathlib import Path
+from tkinter import filedialog, messagebox
 from typing import Dict
 
-from src.config_manager import ConfigManager
-from src.sync_engine import SyncEngine
 from src.adapter_engine import AdapterEngine
+from src.config_manager import ConfigManager
 from src.git_engine import GitEngine
+from src.sync_engine import SyncEngine
 
-# Palette màu Dark Theme tương thích cao, tương phản cực sắc nét
-BG_DARK = "#1e1e2e"
-CARD_BG = "#2a2b3d"
-ENTRY_BG = "#0f172a"          # Nền ô nhập liệu tối hẳn
-ENTRY_FG = "#f8fafc"          # Ký tự gõ chữ trắng sáng 100% hiển thị cực rõ
-TEXT_COLOR = "#e2e8f0"
-TEXT_MUTED = "#a0aec0"
-ACCENT_PRIMARY = "#3182ce"
-ACCENT_HOVER = "#4299e1"
+
+COLORS = {
+    # Apple ships Tk 8.5.9 with the system Python. Its Aqua renderer can
+    # silently ignore custom foreground colors in macOS dark mode, producing
+    # dark text on dark surfaces. A light palette remains legible even when
+    # Aqua overrides a widget's requested foreground.
+    "window": "#f3f5f8",
+    "surface": "#ffffff",
+    "surface_alt": "#f7f8fa",
+    "border": "#dce1e8",
+    "text": "#171a21",
+    "muted": "#5f6878",
+    "subtle": "#8791a2",
+    "accent": "#5b47df",
+    "accent_hover": "#4937c7",
+    "success": "#198754",
+    "warning": "#a66300",
+    "danger": "#c9364f",
+    "info": "#246fbe",
+}
 
 class AppGUI(tk.Tk):
-    """Giao diện Desktop mỏng nhẹ, hiển thị siêu rõ nét trên macOS Dark Mode và Windows."""
+    """Compact cross-platform desktop UI for Skills Auto Sync."""
+
+    AGENTS = (
+        ("antigravity", "Antigravity", "Gemini global skills"),
+        ("codex", "Codex", "System skills are protected"),
+        ("claude", "Claude Code", "Claude global skills"),
+    )
 
     def __init__(self):
         super().__init__()
 
-        self.title("⚡ Skills Auto Sync Tool")
-        self.geometry("840x700")
-        self.minsize(780, 600)
-        self.configure(bg=BG_DARK)
+        self.title("Skills Sync")
+        self.geometry("920x720")
+        self.minsize(820, 650)
+        self.configure(bg=COLORS["window"])
+        self._build_fonts()
 
-        # Config & Engines
         self.config_mgr = ConfigManager()
         self.config = self.config_mgr.config
         self.sync_engine = SyncEngine()
         self.adapter_engine = AdapterEngine()
         self.git_engine = GitEngine()
 
-        # UI Variables
         self.library_path_var = tk.StringVar(value=self.config.library_path)
         self.git_remote_url_var = tk.StringVar(value=self.config.git_remote_url)
         self.agent_vars: Dict[str, tk.BooleanVar] = {
-            "antigravity": tk.BooleanVar(value="antigravity" in self.config.selected_agents),
-            "codex": tk.BooleanVar(value="codex" in self.config.selected_agents),
-            "claude": tk.BooleanVar(value="claude" in self.config.selected_agents),
+            key: tk.BooleanVar(value=key in self.config.selected_agents)
+            for key, _, _ in self.AGENTS
         }
         self.path_vars: Dict[str, tk.StringVar] = {
-            agent: tk.StringVar(value=self.config.agent_paths.get(agent, ""))
-            for agent in ["antigravity", "codex", "claude"]
+            key: tk.StringVar(value=self.config.agent_paths.get(key, ""))
+            for key, _, _ in self.AGENTS
         }
 
         self._build_ui()
         self.refresh_git_status()
 
-    def _create_entry(self, parent, textvariable, width=None):
-        """Hàm tạo Entry với màu tương phản siêu nét (chữ trắng trên nền tối, trỏ chuột trắng)."""
+    def _build_fonts(self):
+        """Build from Tk's resolved system fonts; never rely on platform font names."""
+        default = tkfont.nametofont("TkDefaultFont")
+        fixed = tkfont.nametofont("TkFixedFont")
+
+        def variant(base, size, weight="normal"):
+            result = base.copy()
+            result.configure(size=size, weight=weight)
+            return result
+
+        self.fonts = {
+            "title": variant(default, 22, "bold"),
+            "section": variant(default, 12, "bold"),
+            "body": variant(default, 10),
+            "body_bold": variant(default, 10, "bold"),
+            "small": variant(default, 9),
+            "small_bold": variant(default, 9, "bold"),
+            "tiny": variant(default, 8),
+            "log": variant(fixed, 9),
+        }
+
+    def _build_ui(self):
+        shell = tk.Frame(self, bg=COLORS["window"], padx=28, pady=24)
+        shell.pack(fill=tk.BOTH, expand=True)
+        shell.grid_columnconfigure(0, weight=1)
+        shell.grid_rowconfigure(4, weight=1)
+
+        self._build_header(shell)
+        self._build_workspace_card(shell)
+        self._build_agents_card(shell)
+        self._build_action_bar(shell)
+        self._build_activity_card(shell)
+
+    def _build_header(self, parent):
+        header = tk.Frame(parent, bg=COLORS["window"])
+        header.grid(row=0, column=0, sticky="ew", pady=(0, 20))
+        header.grid_columnconfigure(0, weight=1)
+
+        title_group = tk.Frame(header, bg=COLORS["window"])
+        title_group.grid(row=0, column=0, sticky="w")
+        tk.Label(
+            title_group,
+            text="Skills Sync",
+            font=self.fonts["title"],
+            fg=COLORS["text"],
+            bg=COLORS["window"],
+        ).pack(anchor="w")
+        tk.Label(
+            title_group,
+            text="One library. Every agent. Every machine.",
+            font=self.fonts["body"],
+            fg=COLORS["muted"],
+            bg=COLORS["window"],
+        ).pack(anchor="w", pady=(4, 0))
+
+        status = tk.Frame(
+            header,
+            bg=COLORS["surface"],
+            highlightthickness=1,
+            highlightbackground=COLORS["border"],
+            padx=13,
+            pady=8,
+        )
+        status.grid(row=0, column=1, sticky="e")
+        self.status_dot = tk.Label(
+            status,
+            text="●",
+            font=self.fonts["body"],
+            fg=COLORS["subtle"],
+            bg=COLORS["surface"],
+        )
+        self.status_dot.pack(side=tk.LEFT, padx=(0, 7))
+        self.lbl_git_status = tk.Label(
+            status,
+            text="Checking Git",
+            font=self.fonts["body_bold"],
+            fg=COLORS["muted"],
+            bg=COLORS["surface"],
+        )
+        self.lbl_git_status.pack(side=tk.LEFT)
+        self._button(
+            status,
+            "↻",
+            self.refresh_git_status,
+            kind="ghost",
+            width=3,
+        ).pack(side=tk.LEFT, padx=(9, 0))
+
+    def _card(self, parent, row, title, description, pady=(0, 14)):
+        card = tk.Frame(
+            parent,
+            bg=COLORS["surface"],
+            highlightthickness=1,
+            highlightbackground=COLORS["border"],
+            padx=18,
+            pady=16,
+        )
+        card.grid(row=row, column=0, sticky="ew", pady=pady)
+        card.grid_columnconfigure(0, weight=1)
+
+        tk.Label(
+            card,
+            text=title,
+            font=self.fonts["section"],
+            fg=COLORS["text"],
+            bg=COLORS["surface"],
+        ).grid(row=0, column=0, sticky="w")
+        tk.Label(
+            card,
+            text=description,
+            font=self.fonts["small"],
+            fg=COLORS["muted"],
+            bg=COLORS["surface"],
+        ).grid(row=1, column=0, sticky="w", pady=(3, 12))
+        return card
+
+    def _build_workspace_card(self, parent):
+        card = self._card(
+            parent,
+            1,
+            "Workspace",
+            "Central library and optional Git remote",
+        )
+        form = tk.Frame(card, bg=COLORS["surface"])
+        form.grid(row=2, column=0, sticky="ew")
+        form.grid_columnconfigure(1, weight=1)
+
+        self._field_label(form, "Library").grid(row=0, column=0, sticky="w", padx=(0, 14))
+        self._entry(form, self.library_path_var).grid(row=0, column=1, sticky="ew")
+        self._button(form, "Choose", self.browse_library_path).grid(
+            row=0, column=2, padx=(8, 0)
+        )
+
+        self._field_label(form, "Remote").grid(
+            row=1, column=0, sticky="w", padx=(0, 14), pady=(10, 0)
+        )
+        self._entry(form, self.git_remote_url_var).grid(
+            row=1, column=1, sticky="ew", pady=(10, 0)
+        )
+        self._button(form, "Connect", self.link_git_repo).grid(
+            row=1, column=2, padx=(8, 0), pady=(10, 0)
+        )
+
+    def _build_agents_card(self, parent):
+        card = self._card(
+            parent,
+            2,
+            "Destinations",
+            "Enable an agent and confirm its local skills folder",
+        )
+        list_frame = tk.Frame(card, bg=COLORS["surface"])
+        list_frame.grid(row=2, column=0, sticky="ew")
+        list_frame.grid_columnconfigure(1, weight=1)
+
+        for row_index, (key, name, note) in enumerate(self.AGENTS):
+            row = tk.Frame(list_frame, bg=COLORS["surface_alt"], padx=12, pady=9)
+            row.grid(
+                row=row_index,
+                column=0,
+                columnspan=3,
+                sticky="ew",
+                pady=(0, 7 if row_index < len(self.AGENTS) - 1 else 0),
+            )
+            row.grid_columnconfigure(2, weight=1)
+
+            toggle = tk.Checkbutton(
+                row,
+                variable=self.agent_vars[key],
+                bg=COLORS["surface_alt"],
+                activebackground=COLORS["surface_alt"],
+                selectcolor=COLORS["surface"],
+                highlightthickness=0,
+                bd=0,
+                cursor="hand2",
+            )
+            toggle.grid(row=0, column=0, rowspan=2, padx=(0, 9))
+
+            name_group = tk.Frame(row, bg=COLORS["surface_alt"], width=148)
+            name_group.grid(row=0, column=1, rowspan=2, sticky="w")
+            name_group.grid_propagate(False)
+            tk.Label(
+                name_group,
+                text=name,
+                font=self.fonts["body_bold"],
+                fg=COLORS["text"],
+                bg=COLORS["surface_alt"],
+            ).pack(anchor="w")
+            tk.Label(
+                name_group,
+                text=note,
+                font=self.fonts["tiny"],
+                fg=COLORS["muted"],
+                bg=COLORS["surface_alt"],
+            ).pack(anchor="w", pady=(2, 0))
+
+            self._entry(row, self.path_vars[key], compact=True).grid(
+                row=0, column=2, rowspan=2, sticky="ew", padx=(12, 8)
+            )
+            self._button(
+                row,
+                "Choose",
+                lambda agent_key=key: self.browse_agent_path(agent_key),
+                kind="ghost",
+            ).grid(row=0, column=3, rowspan=2)
+
+    def _build_action_bar(self, parent):
+        actions = tk.Frame(parent, bg=COLORS["window"])
+        actions.grid(row=3, column=0, sticky="ew", pady=(2, 14))
+
+        self._button(
+            actions,
+            "Save settings",
+            self.save_current_config,
+            kind="ghost",
+        ).pack(side=tk.LEFT)
+        self._button(
+            actions,
+            "Preview changes",
+            self.preview_changes,
+            kind="secondary",
+        ).pack(side=tk.RIGHT, padx=(8, 0))
+        self.sync_button = self._button(
+            actions,
+            "Sync now",
+            self.run_smart_sync,
+            kind="primary",
+            width=15,
+        )
+        self.sync_button.pack(side=tk.RIGHT)
+
+    def _build_activity_card(self, parent):
+        card = tk.Frame(
+            parent,
+            bg=COLORS["surface"],
+            highlightthickness=1,
+            highlightbackground=COLORS["border"],
+        )
+        card.grid(row=4, column=0, sticky="nsew")
+        card.grid_columnconfigure(0, weight=1)
+        card.grid_rowconfigure(1, weight=1)
+
+        bar = tk.Frame(card, bg=COLORS["surface"], padx=16, pady=11)
+        bar.grid(row=0, column=0, sticky="ew")
+        bar.grid_columnconfigure(0, weight=1)
+        tk.Label(
+            bar,
+            text="Activity",
+            font=self.fonts["body_bold"],
+            fg=COLORS["text"],
+            bg=COLORS["surface"],
+        ).grid(row=0, column=0, sticky="w")
+        self._button(bar, "Clear", self.clear_log, kind="ghost").grid(
+            row=0, column=1, sticky="e"
+        )
+
+        log_wrap = tk.Frame(card, bg=COLORS["window"])
+        log_wrap.grid(row=1, column=0, sticky="nsew", padx=1, pady=(0, 1))
+        log_wrap.grid_columnconfigure(0, weight=1)
+        log_wrap.grid_rowconfigure(0, weight=1)
+
+        self.txt_log = tk.Text(
+            log_wrap,
+            font=self.fonts["log"],
+            bg=COLORS["window"],
+            fg=COLORS["muted"],
+            insertbackground=COLORS["text"],
+            selectbackground=COLORS["accent"],
+            bd=0,
+            padx=15,
+            pady=12,
+            wrap="word",
+            state=tk.DISABLED,
+        )
+        self.txt_log.grid(row=0, column=0, sticky="nsew")
+        scrollbar = tk.Scrollbar(
+            log_wrap,
+            orient=tk.VERTICAL,
+            command=self.txt_log.yview,
+            bd=0,
+            highlightthickness=0,
+        )
+        scrollbar.grid(row=0, column=1, sticky="ns")
+        self.txt_log.configure(yscrollcommand=scrollbar.set)
+        self.txt_log.tag_configure("success", foreground=COLORS["success"])
+        self.txt_log.tag_configure("warning", foreground=COLORS["warning"])
+        self.txt_log.tag_configure("error", foreground=COLORS["danger"])
+        self.txt_log.tag_configure("info", foreground=COLORS["info"])
+        self.log("Ready. Review your folders, then preview or sync.", "info")
+
+    def _field_label(self, parent, text):
+        return tk.Label(
+            parent,
+            text=text,
+            font=self.fonts["small_bold"],
+            fg=COLORS["muted"],
+            bg=COLORS["surface"],
+            width=8,
+            anchor="w",
+        )
+
+    def _entry(self, parent, textvariable, compact=False):
         return tk.Entry(
             parent,
             textvariable=textvariable,
-            font=("Segoe UI", 10, "bold"),
-            bg=ENTRY_BG,
-            fg=ENTRY_FG,
-            insertbackground="#ffffff",
-            highlightbackground="#475569",
-            highlightcolor="#38bdf8",
-            bd=1,
-            relief="solid",
-            width=width
+            font=self.fonts["small"] if compact else self.fonts["body"],
+            bg=COLORS["window"],
+            fg=COLORS["text"],
+            insertbackground=COLORS["text"],
+            disabledbackground=COLORS["surface_alt"],
+            disabledforeground=COLORS["subtle"],
+            highlightthickness=1,
+            highlightbackground=COLORS["border"],
+            highlightcolor=COLORS["accent"],
+            relief=tk.FLAT,
+            bd=0,
         )
 
-    def _build_ui(self):
-        main_frame = tk.Frame(self, bg=BG_DARK, padx=16, pady=16)
-        main_frame.pack(fill=tk.BOTH, expand=True)
-
-        # --- HEADER TITLE ---
-        lbl_title = tk.Label(
-            main_frame, text="⚡ Skills Auto Sync Tool",
-            font=("Segoe UI", 16, "bold"), fg="#63b3ed", bg=BG_DARK
+    def _button(self, parent, text, command, kind="secondary", width=None):
+        styles = {
+            "primary": (
+                COLORS["accent"],
+                COLORS["text"],
+                COLORS["accent_hover"],
+            ),
+            "secondary": (
+                COLORS["surface_alt"],
+                COLORS["text"],
+                COLORS["border"],
+            ),
+            "ghost": (
+                COLORS["surface"],
+                COLORS["muted"],
+                COLORS["surface_alt"],
+            ),
+        }
+        bg, fg, active_bg = styles[kind]
+        return tk.Button(
+            parent,
+            text=text,
+            command=command,
+            font=self.fonts["small_bold"],
+            bg=bg,
+            fg=fg,
+            activebackground=active_bg,
+            activeforeground=COLORS["text"],
+            disabledforeground=COLORS["subtle"],
+            relief=tk.FLAT,
+            bd=0,
+            highlightthickness=0,
+            padx=12,
+            pady=7,
+            width=width,
+            cursor="hand2",
         )
-        lbl_title.pack(anchor="w", pady=(0, 12))
 
-        # --- SECTION 1: CENTRAL SKILLS LIBRARY & GIT REMOTE REPO ---
-        sec1 = tk.LabelFrame(
-            main_frame, text=" 📌 1. THƯ VIỆN GỐC & GIT REMOTE REPO ",
-            font=("Segoe UI", 11, "bold"), fg="#9f7aea", bg=CARD_BG,
-            bd=1, relief="solid", padx=12, pady=12
-        )
-        sec1.pack(fill=tk.X, pady=(0, 12))
+    def set_git_status(self, text, color):
+        self.status_dot.configure(fg=color)
+        self.lbl_git_status.configure(text=text, fg=color)
 
-        # Row 1.1: Local Library Path
-        r1 = tk.Frame(sec1, bg=CARD_BG)
-        r1.pack(fill=tk.X, pady=4)
-        tk.Label(r1, text="Skills Lib Path:", font=("Segoe UI", 10, "bold"), fg=TEXT_COLOR, bg=CARD_BG, width=15, anchor="w").pack(side=tk.LEFT)
-        e_lib = self._create_entry(r1, self.library_path_var)
-        e_lib.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 8))
-        tk.Button(r1, text="Browse...", font=("Segoe UI", 9, "bold"), bg="#4a5568", fg="white", activebackground="#718096", activeforeground="white", command=self.browse_library_path).pack(side=tk.LEFT)
-
-        # Row 1.2: Git Remote URL
-        r2 = tk.Frame(sec1, bg=CARD_BG)
-        r2.pack(fill=tk.X, pady=4)
-        tk.Label(r2, text="Git Remote URL:", font=("Segoe UI", 10, "bold"), fg=TEXT_COLOR, bg=CARD_BG, width=15, anchor="w").pack(side=tk.LEFT)
-        e_url = self._create_entry(r2, self.git_remote_url_var)
-        e_url.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 8))
-        tk.Button(r2, text="🔗 Link/Clone Repo", font=("Segoe UI", 9, "bold"), bg="#805ad5", fg="white", activebackground="#9f7aea", activeforeground="white", command=self.link_git_repo).pack(side=tk.LEFT)
-
-        # Row 1.3: Git Status Badge Line
-        r3 = tk.Frame(sec1, bg=CARD_BG)
-        r3.pack(fill=tk.X, pady=(6, 0))
-        tk.Label(r3, text="Git Status:", font=("Segoe UI", 9, "bold"), fg=TEXT_MUTED, bg=CARD_BG).pack(side=tk.LEFT, padx=(0, 8))
-        self.lbl_git_status = tk.Label(r3, text="Checking...", font=("Segoe UI", 10, "bold"), fg="#63b3ed", bg=CARD_BG)
-        self.lbl_git_status.pack(side=tk.LEFT)
-
-        # --- SECTION 2: ACTIVE AGENTS ---
-        sec2 = tk.LabelFrame(
-            main_frame, text=" 🤖 2. CẤU HÌNH AGENTS TRÊN MÁY NÀY ",
-            font=("Segoe UI", 11, "bold"), fg="#38b2ac", bg=CARD_BG,
-            bd=1, relief="solid", padx=12, pady=12
-        )
-        sec2.pack(fill=tk.X, pady=(0, 12))
-
-        agents_info = [
-            ("antigravity", "Antigravity Agent", "~/.gemini/config/skills"),
-            ("codex", "Codex Agent (Giữ .system)", "~/.codex/skills"),
-            ("claude", "Claude Code Agent", "~/.claude"),
-        ]
-
-        for key, label_text, default_hint in agents_info:
-            row = tk.Frame(sec2, bg=CARD_BG)
-            row.pack(fill=tk.X, pady=4)
-
-            chk = tk.Checkbutton(
-                row, text=label_text, variable=self.agent_vars[key],
-                font=("Segoe UI", 10, "bold"), fg=TEXT_COLOR, bg=CARD_BG,
-                activebackground=CARD_BG, activeforeground=TEXT_COLOR, selectcolor="#2d3748",
-                width=24, anchor="w"
-            )
-            chk.pack(side=tk.LEFT)
-
-            ent = self._create_entry(row, self.path_vars[key])
-            ent.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 6))
-
-            tk.Button(row, text="Browse", font=("Segoe UI", 9, "bold"), bg="#4a5568", fg="white", activebackground="#718096", activeforeground="white", command=lambda k=key: self.browse_agent_path(k)).pack(side=tk.LEFT, padx=(0, 4))
-            tk.Button(row, text="Auto Detect", font=("Segoe UI", 9, "bold"), bg="#2d3748", fg="white", activebackground="#4a5568", activeforeground="white", command=lambda k=key: self.auto_detect_path(k)).pack(side=tk.LEFT)
-
-        # --- SECTION 3: ACTION BAR ---
-        sec3 = tk.Frame(main_frame, bg=BG_DARK)
-        sec3.pack(fill=tk.X, pady=(0, 12))
-
-        btn_sync = tk.Button(
-            sec3, text="🚀 SMART SYNC NOW", font=("Segoe UI", 11, "bold"),
-            bg=ACCENT_PRIMARY, fg="white", activebackground=ACCENT_HOVER, activeforeground="white",
-            bd=0, padx=18, pady=8, cursor="hand2", command=self.run_smart_sync
-        )
-        btn_sync.pack(side=tk.RIGHT, padx=(8, 0))
-
-        btn_preview = tk.Button(
-            sec3, text="🔍 Preview Changes", font=("Segoe UI", 10, "bold"),
-            bg="#4a5568", fg="white", activebackground="#718096", activeforeground="white",
-            bd=0, padx=12, pady=6, cursor="hand2", command=self.preview_changes
-        )
-        btn_preview.pack(side=tk.RIGHT, padx=(8, 0))
-
-        btn_save = tk.Button(
-            sec3, text="⚙️ Save Config", font=("Segoe UI", 10, "bold"),
-            bg="#2d3748", fg="white", activebackground="#4a5568", activeforeground="white",
-            bd=0, padx=12, pady=6, cursor="hand2", command=self.save_current_config
-        )
-        btn_save.pack(side=tk.RIGHT)
-
-        # --- SECTION 4: LOG CONSOLE ---
-        sec4 = tk.LabelFrame(
-            main_frame, text=" 💡 LOG BÁO CÁO TIẾN TRÌNH ",
-            font=("Segoe UI", 10, "bold"), fg=TEXT_MUTED, bg=CARD_BG,
-            bd=1, relief="solid", padx=8, pady=8
-        )
-        sec4.pack(fill=tk.BOTH, expand=True)
-
-        self.txt_log = tk.Text(
-            sec4, font=("Menlo" if sys.platform == "darwin" else "Consolas", 10),
-            bg="#0f172a", fg="#38bdf8", insertbackground="white", bd=0, wrap="word"
-        )
-        self.txt_log.pack(fill=tk.BOTH, expand=True, side=tk.LEFT)
-
-        scrollbar = tk.Scrollbar(sec4, orient=tk.VERTICAL, command=self.txt_log.yview)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self.txt_log.configure(yscrollcommand=scrollbar.set)
-
-        self.log("[System] Đã sẵn sàng. Điền đường dẫn Library + Git Remote URL rồi bấm Smart Sync!")
-
-    def log(self, message: str):
-        """Ghi log vào console window."""
-        self.txt_log.insert(tk.END, message + "\n")
+    def log(self, message: str, level=""):
+        self.txt_log.configure(state=tk.NORMAL)
+        self.txt_log.insert(tk.END, message + "\n", level)
+        self.txt_log.configure(state=tk.DISABLED)
         self.txt_log.see(tk.END)
+        self.update_idletasks()
+
+    def clear_log(self):
+        self.txt_log.configure(state=tk.NORMAL)
+        self.txt_log.delete("1.0", tk.END)
+        self.txt_log.configure(state=tk.DISABLED)
 
     def browse_library_path(self):
-        d = filedialog.askdirectory(title="Chọn Thư viện Skills Trung tâm")
-        if d:
-            self.library_path_var.set(d)
+        selected = filedialog.askdirectory(title="Choose central skills library")
+        if selected:
+            self.library_path_var.set(selected)
             self.refresh_git_status()
 
     def browse_agent_path(self, agent_key: str):
-        d = filedialog.askdirectory(title=f"Chọn đường dẫn folder của {agent_key}")
-        if d:
-            self.path_vars[agent_key].set(d)
+        selected = filedialog.askdirectory(title=f"Choose {agent_key} skills folder")
+        if selected:
+            self.path_vars[agent_key].set(selected)
 
-    def auto_detect_path(self, agent_key: str):
-        defaults = self.config_mgr.get_default_agent_paths()
-        detected = defaults.get(agent_key, "")
-        self.path_vars[agent_key].set(detected)
-        self.log(f"[Auto-Detect] {agent_key} -> {detected}")
-
-    def save_current_config(self):
-        """Lưu cấu hình vào file config.json."""
+    def save_current_config(self, announce=True):
         self.config.library_path = self.library_path_var.get().strip()
         self.config.git_remote_url = self.git_remote_url_var.get().strip()
-        self.config.selected_agents = [k for k, v in self.agent_vars.items() if v.get()]
-        for k, v in self.path_vars.items():
-            self.config.agent_paths[k] = v.get().strip()
-
+        self.config.selected_agents = [
+            key for key, value in self.agent_vars.items() if value.get()
+        ]
+        for key, value in self.path_vars.items():
+            self.config.agent_paths[key] = value.get().strip()
         self.config_mgr.save_config()
-        self.log("[Config] Đã lưu cấu hình thành công vào config.json.")
+        if announce:
+            self.log("Settings saved.", "success")
 
     def link_git_repo(self):
-        """Khởi tạo hoặc liên kết Git Repo theo git_remote_url."""
-        lib_str = self.library_path_var.get().strip()
-        remote_url = self.git_remote_url_var.get().strip()
-
-        if not lib_str:
-            messagebox.showwarning("Cảnh báo", "Vui lòng chọn đường dẫn Thư viện Skills Lib Path trước.")
+        library = self.library_path_var.get().strip()
+        remote = self.git_remote_url_var.get().strip()
+        if not library:
+            messagebox.showwarning("Library required", "Choose a central library first.")
+            return
+        if not remote:
+            messagebox.showwarning("Remote required", "Enter a Git remote URL first.")
             return
 
-        if not remote_url:
-            messagebox.showwarning("Cảnh báo", "Vui lòng nhập Git Remote URL (Ví dụ: https://github.com/user/skills.git).")
-            return
-
-        self.save_current_config()
-        ok, msg = self.git_engine.ensure_git_repo_linked(Path(lib_str), remote_url)
-        if ok:
-            messagebox.showinfo("Thành công", msg)
-            self.log(f"[Git Link] {msg}")
-        else:
-            messagebox.showerror("Lỗi Git Link", msg)
-            self.log(f"[Git Link Error] {msg}")
-
+        self.save_current_config(announce=False)
+        ok, message = self.git_engine.ensure_git_repo_linked(Path(library), remote)
+        self.log(message, "success" if ok else "error")
+        if not ok:
+            messagebox.showerror("Git connection failed", message)
         self.refresh_git_status()
 
     def refresh_git_status(self):
-        """Cập nhật Badge trạng thái Git."""
-        lib_str = self.library_path_var.get().strip()
-        if not lib_str or not Path(lib_str).exists():
-            self.lbl_git_status.configure(text="🔴 Chưa chọn thư mục Skills Lib", fg="#f56565")
+        library = self.library_path_var.get().strip()
+        if not library or not Path(library).is_dir():
+            self.set_git_status("Library not set", COLORS["subtle"])
             return
 
-        res = self.git_engine.get_git_status(Path(lib_str))
-        if res.status == "UP_TO_DATE":
-            self.lbl_git_status.configure(text="🟢 Up-to-date (Git synced)", fg="#48bb78")
-        elif res.status == "AHEAD":
-            self.lbl_git_status.configure(text=f"🔵 Local Ahead ({res.ahead_count} commits)", fg="#4299e1")
-        elif res.status == "BEHIND":
-            self.lbl_git_status.configure(text=f"🟧 Remote Ahead ({res.behind_count} commits pending)", fg="#ed8936")
-        elif res.status == "DIVERGED":
-            self.lbl_git_status.configure(text=f"🔴 Conflict (Diverged: +{res.ahead_count}/-{res.behind_count})", fg="#f56565")
-        elif res.status == "OFFLINE":
-            self.lbl_git_status.configure(text="⚠️ Offline Mode", fg="#ecc94b")
-        else:
-            self.lbl_git_status.configure(text=f"ℹ️ {res.error_message}", fg="#a0aec0")
+        result = self.git_engine.get_git_status(Path(library))
+        status_map = {
+            "UP_TO_DATE": ("Up to date", COLORS["success"]),
+            "AHEAD": (f"Local ahead · {result.ahead_count}", COLORS["info"]),
+            "BEHIND": (f"Remote ahead · {result.behind_count}", COLORS["warning"]),
+            "DIVERGED": ("Git conflict", COLORS["danger"]),
+            "OFFLINE": ("Offline", COLORS["warning"]),
+        }
+        text, color = status_map.get(
+            result.status,
+            (result.error_message or result.status.replace("_", " ").title(), COLORS["subtle"]),
+        )
+        self.set_git_status(text, color)
 
     def preview_changes(self):
-        """Xem trước tiến trình đồng bộ."""
-        lib_str = self.library_path_var.get().strip()
-        if not lib_str or not Path(lib_str).exists():
-            messagebox.showwarning("Cảnh báo", "Vui lòng chọn Thư viện Skills Lib Path hợp lệ trước.")
+        library = self.library_path_var.get().strip()
+        if not library or not Path(library).is_dir():
+            messagebox.showwarning("Library required", "Choose a valid central library.")
             return
 
-        self.save_current_config()
-        lib_path = Path(lib_str)
+        self.save_current_config(announce=False)
+        library_path = Path(library)
+        self.log("Previewing local changes…", "info")
 
-        self.log("\n--- 🔍 PREVIEW SUMMARY ---")
-        
-        # Check Rules Upstream
-        rules_synced, msg_rules = self.adapter_engine.sync_rules_upstream(
-            lib_path, self.config.agent_paths, self.config.selected_agents, dry_run=True
+        rules_changed, rules_message = self.adapter_engine.sync_rules_upstream(
+            library_path,
+            self.config.agent_paths,
+            self.config.selected_agents,
+            dry_run=True,
         )
-        if rules_synced:
-            self.log(f"  • {msg_rules}")
-
-        res = self.sync_engine.scan_and_sync_upstream(
-            lib_path,
+        result = self.sync_engine.scan_and_sync_upstream(
+            library_path,
             self.config.agent_paths,
             self.config.selected_agents,
             self.config.ignore_patterns,
             dry_run=True,
         )
 
-        if res.files_synced_to_library:
-            self.log(f"Phát hiện {len(res.files_synced_to_library)} file sửa mới ở Agent:")
-            for f in res.files_synced_to_library:
-                self.log(f"  • {f}")
-        elif not rules_synced:
-            self.log("Không có file sửa mới ở Agent. Library đã cập nhật.")
-
+        if rules_changed:
+            self.log(f"• {rules_message}")
+        for file_name in result.files_synced_to_library:
+            self.log(f"• {file_name}")
+        if not rules_changed and not result.files_synced_to_library:
+            self.log("No local agent changes found.", "success")
+        else:
+            count = len(result.files_synced_to_library) + int(rules_changed)
+            self.log(f"{count} change(s) ready to sync.", "warning")
         self.refresh_git_status()
 
     def run_smart_sync(self):
-        """Tiến trình 1-Click Smart Sync (Auto Init/Link Git -> Upstream Sync -> Git Sync -> Deploy Adapters)."""
-        lib_str = self.library_path_var.get().strip()
-        remote_url = self.git_remote_url_var.get().strip()
-
-        if not lib_str:
-            messagebox.showerror("Lỗi", "Chưa nhập đường dẫn Thư viện Skills Lib Path.")
+        library = self.library_path_var.get().strip()
+        remote = self.git_remote_url_var.get().strip()
+        if not library:
+            messagebox.showerror("Library required", "Choose a central library first.")
             return
 
-        self.save_current_config()
-        lib_path = Path(lib_str)
+        self.save_current_config(announce=False)
+        library_path = Path(library)
+        self.sync_button.configure(state=tk.DISABLED, text="Syncing…")
+        self.log("Starting sync…", "info")
 
-        self.log("\n🚀 === KHỞI ĐỘNG SMART SYNC ===")
+        try:
+            if remote:
+                ok, message = self.git_engine.ensure_git_repo_linked(
+                    library_path, remote
+                )
+                self.log(message, "success" if ok else "warning")
 
-        # BƯỚC 0: TỰ ĐỘNG KHỞI TẠO HOẶC KẾT NỐI GIT NẾU CÓ URL
-        if remote_url:
-            self.log(f"[Step 0/3] Kiểm tra liên kết Git Remote URL: {remote_url}")
-            ok_link, msg_link = self.git_engine.ensure_git_repo_linked(lib_path, remote_url)
-            self.log(f"  {'✓' if ok_link else '⚠️'} {msg_link}")
-
-        # BƯỚC 1: UPSTREAM SYNC (Gom file skill & AGENTS.md/CLAUDE.md sửa từ Agent về Library)
-        self.log("[Step 1/3] Quét thay đổi từ Agent Folders (bỏ qua .system)...")
-        rules_synced, msg_rules = self.adapter_engine.sync_rules_upstream(
-            lib_path, self.config.agent_paths, self.config.selected_agents
-        )
-        if rules_synced:
-            self.log(f"  ✓ {msg_rules}")
-
-        up_res = self.sync_engine.scan_and_sync_upstream(
-            lib_path, self.config.agent_paths, self.config.selected_agents, self.config.ignore_patterns
-        )
-
-        has_any_change = up_res.has_library_changes or rules_synced
-
-        if up_res.has_library_changes:
-            self.log(f"  ✓ Đã gom {len(up_res.files_synced_to_library)} file skill sửa đổi từ Agent về Library.")
-
-        # BƯỚC 2: GIT SMART SYNC
-        self.log("[Step 2/3] Kiểm tra và đồng bộ Git Remote...")
-        git_res = self.git_engine.get_git_status(lib_path)
-
-        if git_res.status == "BEHIND":
-            self.log(f"  ➜ Pulling {git_res.behind_count} commits từ Git...")
-            ok, msg = self.git_engine.execute_smart_sync(lib_path, "AUTO_PULL")
-            self.log(f"  {'✓' if ok else '❌'} {msg}")
-
-        elif git_res.status == "AHEAD" or has_any_change:
-            self.log("  ➜ Committing & Pushing thay đổi mới lên Git...")
-            ok, msg = self.git_engine.execute_smart_sync(lib_path, "AUTO_PUSH")
-            self.log(f"  {'✓' if ok else '❌'} {msg}")
-
-        elif git_res.status == "DIVERGED":
-            messagebox.showwarning(
-                "Xung đột Git Remote",
-                f"Phát hiện xung đột Git Remote (+{git_res.ahead_count}/-{git_res.behind_count}).\n\n"
-                "Smart Sync đã dừng để tránh ghi đè dữ liệu. Hãy merge/rebase bằng Git, "
-                "sau đó chạy lại."
+            rules_changed, rules_message = self.adapter_engine.sync_rules_upstream(
+                library_path,
+                self.config.agent_paths,
+                self.config.selected_agents,
             )
-            self.log("  ❌ Đã dừng: cần xử lý diverged thủ công để tránh mất dữ liệu.")
-            return
+            if rules_changed:
+                self.log(rules_message, "success")
 
-        elif git_res.status == "OFFLINE":
-            self.log("  ⚠️ Offline Mode: Bỏ qua Git sync, tiếp tục đồng bộ cục bộ.")
+            upstream = self.sync_engine.scan_and_sync_upstream(
+                library_path,
+                self.config.agent_paths,
+                self.config.selected_agents,
+                self.config.ignore_patterns,
+            )
+            if upstream.has_library_changes:
+                self.log(
+                    f"Collected {len(upstream.files_synced_to_library)} local change(s).",
+                    "success",
+                )
 
-        # BƯỚC 3: DEPLOY ADAPTERS & DOWNSTREAM SYNC
-        self.log("[Step 3/3] Triển khai Adapters (AGENTS.md, CLAUDE.md) & Phân bổ Skills...")
-        adapters_deployed = self.adapter_engine.deploy_adapters(
-            lib_path, self.config.agent_paths, self.config.selected_agents
-        )
-        for adp in adapters_deployed:
-            self.log(f"  ✓ Deployed rule: {adp}")
+            git_status = self.git_engine.get_git_status(library_path)
+            if git_status.status == "DIVERGED":
+                self.log("Stopped: local and remote histories have diverged.", "error")
+                messagebox.showwarning(
+                    "Git conflict",
+                    "Sync stopped to protect your data. Merge or rebase the repository, "
+                    "then run sync again.",
+                )
+                return
+            if git_status.status == "BEHIND":
+                ok, message = self.git_engine.execute_smart_sync(
+                    library_path, "AUTO_PULL"
+                )
+                self.log(message, "success" if ok else "error")
+            elif (
+                git_status.status == "AHEAD"
+                or upstream.has_library_changes
+                or rules_changed
+            ):
+                ok, message = self.git_engine.execute_smart_sync(
+                    library_path, "AUTO_PUSH"
+                )
+                self.log(message, "success" if ok else "error")
+            elif git_status.status == "OFFLINE":
+                self.log("Git unavailable. Continuing with local deployment.", "warning")
 
-        skills_deployed = self.sync_engine.deploy_skills_to_agents(
-            lib_path, self.config.agent_paths, self.config.selected_agents, self.config.ignore_patterns
-        )
-        self.log(f"  ✓ Đã cập nhật skills tới: {', '.join(skills_deployed)}")
-
-        self.refresh_git_status()
-        self.log("🎉 === SMART SYNC HOÀN TẤT THÀNH CÔNG ===\n")
+            adapters = self.adapter_engine.deploy_adapters(
+                library_path,
+                self.config.agent_paths,
+                self.config.selected_agents,
+            )
+            agents = self.sync_engine.deploy_skills_to_agents(
+                library_path,
+                self.config.agent_paths,
+                self.config.selected_agents,
+                self.config.ignore_patterns,
+            )
+            self.log(
+                f"Deployed to {len(agents)} agent(s) and {len(adapters)} adapter target(s).",
+                "success",
+            )
+            self.log("Sync complete.", "success")
+        except Exception as exc:
+            self.log(f"Sync failed: {exc}", "error")
+            messagebox.showerror("Sync failed", str(exc))
+        finally:
+            self.sync_button.configure(state=tk.NORMAL, text="Sync now")
+            self.refresh_git_status()
