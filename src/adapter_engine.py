@@ -1,5 +1,3 @@
-import os
-import shutil
 import hashlib
 from pathlib import Path
 from typing import List, Dict, Tuple
@@ -48,14 +46,14 @@ class AdapterEngine:
         self,
         library_path: Path,
         agent_paths: Dict[str, str],
-        selected_agents: List[str]
+        selected_agents: List[str],
+        dry_run: bool = False,
     ) -> Tuple[bool, str]:
         """
         [Upstream Rules Sync]: Phát hiện nếu AGENTS.md hoặc CLAUDE.md ở bất kỳ Agent nào mới hơn
         bản trong Central Library (shared_rules/agents.md hoặc AGENTS.md), tự động gom về Library.
         """
         shared_rules_dir = library_path / "shared_rules"
-        shared_rules_dir.mkdir(parents=True, exist_ok=True)
         lib_rules_file = shared_rules_dir / "agents.md"
         lib_root_file = library_path / "AGENTS.md"
 
@@ -82,7 +80,10 @@ class AdapterEngine:
                         lib_mtime = rf_mtime
 
         if newer_agent_rules and newer_agent_rules.exists():
+            if dry_run:
+                return True, f"Sẽ gom rules sửa đổi từ {source_info} về Central Library."
             try:
+                shared_rules_dir.mkdir(parents=True, exist_ok=True)
                 with open(newer_agent_rules, "r", encoding="utf-8") as f:
                     content = f.read()
 

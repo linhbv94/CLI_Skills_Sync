@@ -1,14 +1,13 @@
-import os
 import sys
 import tkinter as tk
 from tkinter import filedialog, messagebox
 from pathlib import Path
-from typing import List, Dict
+from typing import Dict
 
 from src.config_manager import ConfigManager
 from src.sync_engine import SyncEngine
 from src.adapter_engine import AdapterEngine
-from src.git_engine import GitEngine, GitStatusResult
+from src.git_engine import GitEngine
 
 # Palette màu Dark Theme tương thích cao, tương phản cực sắc nét
 BG_DARK = "#1e1e2e"
@@ -281,13 +280,17 @@ class AppGUI(tk.Tk):
         
         # Check Rules Upstream
         rules_synced, msg_rules = self.adapter_engine.sync_rules_upstream(
-            lib_path, self.config.agent_paths, self.config.selected_agents
+            lib_path, self.config.agent_paths, self.config.selected_agents, dry_run=True
         )
         if rules_synced:
             self.log(f"  • {msg_rules}")
 
         res = self.sync_engine.scan_and_sync_upstream(
-            lib_path, self.config.agent_paths, self.config.selected_agents, self.config.ignore_patterns
+            lib_path,
+            self.config.agent_paths,
+            self.config.selected_agents,
+            self.config.ignore_patterns,
+            dry_run=True,
         )
 
         if res.files_synced_to_library:
@@ -351,15 +354,14 @@ class AppGUI(tk.Tk):
             self.log(f"  {'✓' if ok else '❌'} {msg}")
 
         elif git_res.status == "DIVERGED":
-            ans = messagebox.askyesno(
+            messagebox.showwarning(
                 "Xung đột Git Remote",
                 f"Phát hiện xung đột Git Remote (+{git_res.ahead_count}/-{git_res.behind_count}).\n\n"
-                "Bạn có muốn FORCE PUSH bản Local hiện tại đè lên Git Remote không?\n"
-                "(Chọn 'No' để Force Pull bản Remote về)."
+                "Smart Sync đã dừng để tránh ghi đè dữ liệu. Hãy merge/rebase bằng Git, "
+                "sau đó chạy lại."
             )
-            mode = "FORCE_PUSH" if ans else "FORCE_PULL"
-            ok, msg = self.git_engine.execute_smart_sync(lib_path, mode)
-            self.log(f"  {'✓' if ok else '❌'} {msg}")
+            self.log("  ❌ Đã dừng: cần xử lý diverged thủ công để tránh mất dữ liệu.")
+            return
 
         elif git_res.status == "OFFLINE":
             self.log("  ⚠️ Offline Mode: Bỏ qua Git sync, tiếp tục đồng bộ cục bộ.")

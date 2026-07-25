@@ -4,7 +4,7 @@ import hashlib
 import fnmatch
 from pathlib import Path
 from dataclasses import dataclass
-from typing import List, Dict, Tuple
+from typing import List, Dict
 
 @dataclass
 class UpstreamSyncResult:
@@ -50,7 +50,8 @@ class SyncEngine:
         library_path: Path,
         agent_paths: Dict[str, str],
         selected_agents: List[str],
-        ignore_patterns: List[str]
+        ignore_patterns: List[str],
+        dry_run: bool = False,
     ) -> UpstreamSyncResult:
         """
         [Upstream Sync]: Quét các Agent Folders active.
@@ -58,11 +59,12 @@ class SyncEngine:
         copy file đó ngược về Central Library và phân bổ sang các Agent còn lại.
         """
         library_skills_dir = library_path / "skills"
-        library_skills_dir.mkdir(parents=True, exist_ok=True)
+        if not dry_run:
+            library_skills_dir.mkdir(parents=True, exist_ok=True)
 
         synced_files = []
         agents_affected = set()
-        has_changes = False
+        candidates = {}
 
         for agent_name in selected_agents:
             agent_dir_str = agent_paths.get(agent_name, "")
@@ -92,27 +94,32 @@ class SyncEngine:
                         continue
 
                     library_file = library_skills_dir / rel_path
-
-                    # So sánh nội dung & thời gian sửa đổi
                     agent_hash = self.get_file_hash(agent_file)
                     lib_hash = self.get_file_hash(library_file)
 
                     if agent_hash and agent_hash != lib_hash:
                         agent_mtime = agent_file.stat().st_mtime
                         lib_mtime = library_file.stat().st_mtime if library_file.exists() else 0
-
-                        # Nếu file bên Agent mới hơn Library
                         if agent_mtime > lib_mtime:
-                            library_file.parent.mkdir(parents=True, exist_ok=True)
-                            shutil.copy2(agent_file, library_file)
-                            synced_files.append(f"{agent_name}: {rel_str}")
-                            agents_affected.add(agent_name)
-                            has_changes = True
+                            current = candidates.get(rel_path)
+                            if current is None or agent_mtime > current[0]:
+                                candidates[rel_path] = (agent_mtime, agent_name, agent_file)
+
+        # Chọn bản mới nhất một lần cho mỗi path. Trước đây thứ tự selected_agents
+        # có thể khiến cùng một file bị copy nhiều lần và kết quả phụ thuộc thứ tự quét.
+        for rel_path in sorted(candidates, key=lambda path: path.as_posix()):
+            _, agent_name, agent_file = candidates[rel_path]
+            if not dry_run:
+                library_file = library_skills_dir / rel_path
+                library_file.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(agent_file, library_file)
+            synced_files.append(f"{agent_name}: {rel_path.as_posix()}")
+            agents_affected.add(agent_name)
 
         return UpstreamSyncResult(
             files_synced_to_library=synced_files,
-            agents_updated=list(agents_affected),
-            has_library_changes=has_changes
+            agents_updated=sorted(agents_affected),
+            has_library_changes=bool(candidates),
         )
 
     def deploy_skills_to_agents(

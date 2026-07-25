@@ -1,6 +1,6 @@
+import argparse
 import os
 import sys
-import argparse
 from pathlib import Path
 
 # Suppress macOS Tk deprecation warning
@@ -24,16 +24,21 @@ def run_cli_mode():
         sys.exit(1)
 
     lib_path = Path(lib_path_str)
-    if not lib_path.exists():
+    if not lib_path.is_dir():
         print(f"❌ Lỗi: Thư viện gốc '{lib_path}' không tồn tại. Vui lòng kiểm tra lại đường dẫn.")
         sys.exit(1)
-
 
     sync_engine = SyncEngine()
     adapter_engine = AdapterEngine()
     git_engine = GitEngine()
 
     print("[Step 1/3] Quét thay đổi Upstream từ các Agent active (loại trừ .system)...")
+    rules_synced, rules_message = adapter_engine.sync_rules_upstream(
+        lib_path, config.agent_paths, config.selected_agents
+    )
+    if rules_synced:
+        print(f"  ✓ {rules_message}")
+
     up_res = sync_engine.scan_and_sync_upstream(
         lib_path, config.agent_paths, config.selected_agents, config.ignore_patterns
     )
@@ -45,7 +50,7 @@ def run_cli_mode():
     if git_res.status == "BEHIND":
         ok, msg = git_engine.execute_smart_sync(lib_path, "AUTO_PULL")
         print(f"  {'✓' if ok else '❌'} {msg}")
-    elif git_res.status == "AHEAD" or up_res.has_library_changes:
+    elif git_res.status == "AHEAD" or up_res.has_library_changes or rules_synced:
         ok, msg = git_engine.execute_smart_sync(lib_path, "AUTO_PUSH")
         print(f"  {'✓' if ok else '❌'} {msg}")
     elif git_res.status == "OFFLINE":
