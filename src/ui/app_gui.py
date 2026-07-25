@@ -119,9 +119,11 @@ class AppGUI(tk.Tk):
             chk = tk.Checkbutton(
                 row, text=label_text, variable=self.agent_vars[key],
                 font=("Segoe UI", 10, "bold"), fg=TEXT_COLOR, bg=CARD_BG,
-                activebackground=CARD_BG, activeforeground=TEXT_COLOR, selectcolor="#2d3748"
+                activebackground=CARD_BG, activeforeground=TEXT_COLOR, selectcolor="#2d3748",
+                width=24, anchor="w"
             )
-            chk.pack(side=tk.LEFT, width=24, anchor="w")
+            chk.pack(side=tk.LEFT)
+
 
             ent = tk.Entry(row, textvariable=self.path_vars[key], font=("Segoe UI", 10), bg="#1a202c", fg="#e2e8f0", insertbackground="white", bd=1, relief="solid")
             ent.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 6))
