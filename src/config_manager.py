@@ -16,8 +16,9 @@ DEFAULT_IGNORE_PATTERNS = [
 
 @dataclass
 class AppConfig:
-    version: str = "1.1.0"
+    version: str = "1.2.0"
     library_path: str = ""
+    git_remote_url: str = ""
     selected_agents: List[str] = field(default_factory=lambda: ["antigravity", "codex", "claude"])
     agent_paths: Dict[str, str] = field(default_factory=dict)
     ignore_patterns: List[str] = field(default_factory=lambda: list(DEFAULT_IGNORE_PATTERNS))
@@ -60,8 +61,9 @@ class ConfigManager:
                 with open(self.config_file, "r", encoding="utf-8") as f:
                     data = json.load(f)
                 
-                self.config.version = data.get("version", "1.1.0")
+                self.config.version = data.get("version", "1.2.0")
                 self.config.library_path = data.get("library_path", "")
+                self.config.git_remote_url = data.get("git_remote_url", "")
                 self.config.selected_agents = data.get("selected_agents", ["antigravity", "codex", "claude"])
                 
                 agent_paths = data.get("agent_paths", {})
@@ -85,11 +87,13 @@ class ConfigManager:
         data = {
             "version": self.config.version,
             "library_path": self.config.library_path,
+            "git_remote_url": self.config.git_remote_url,
             "selected_agents": self.config.selected_agents,
             "agent_paths": self.config.agent_paths,
             "ignore_patterns": self.config.ignore_patterns,
             "git_settings": self.config.git_settings
         }
+
         try:
             with open(self.config_file, "w", encoding="utf-8") as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)

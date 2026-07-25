@@ -1,6 +1,6 @@
 # UI & Wireframe Specification: Skills Auto Sync Tool (`_spec3_ui_wireframe`)
 
-> **Version:** 1.0.0  
+> **Version:** 1.2.0  
 > **Last Updated:** 2026-07-25  
 > **Target Audience:** UI/UX Designers, Frontend Developers, UI Agents  
 
@@ -8,41 +8,41 @@
 
 ## 1. Bố cục Giao diện Màn hình chính (Main Dashboard Spec)
 
-Giao diện ứng dụng dạng cửa sổ gọn nhẹ (Kích thước chuẩn: `780px x 560px`, Không cho phép resize quá nhỏ):
+Giao diện ứng dụng dạng cửa sổ mỏng nhẹ, tối ưu màu nền Dark Mode tương thích cao (Kích thước chuẩn: `820px x 680px`):
 
 ```text
 +-----------------------------------------------------------------------------------+
-| ⚡ Skills Auto Sync Tool (v1.0.0)                         [OS: macOS Arm64] [_][X] |
+| ⚡ Skills Auto Sync Tool (v1.2.0)                         [OS: macOS Arm64] [_][X] |
 +-----------------------------------------------------------------------------------+
 |                                                                                   |
-|  📌 1. NGUỒN DỮ LIỆU TỔNG (CENTRAL LIBRARY)                                        |
-|  Library Path: [/Users/vic/skills_library                       ] [ Browse... ]   |
-|  Git Status:   🟢 Up-to-date (origin/main) | Last Sync: 2026-07-25 18:30         |
-|                                                                                   |
-+-----------------------------------------------------------------------------------+
-|                                                                                   |
-|  🤖 2. CHỌN AGENTS ĐỒNG BỘ TRÊN MÁY NÀY                                           |
-|  [X] Antigravity   Path: [~/.gemini/config                       ] [ Auto-Detect ]|
-|  [X] Codex         Path: [~/.codex/skills                        ] [ Auto-Detect ]|
-|  [X] Claude Code   Path: [~/.claude                              ] [ Auto-Detect ]|
+|  📌 1. THƯ VIỆN GỐC & GIT REMOTE REPO                                             |
+|  Skills Lib Path: [/Users/vic/my_skills_lib                     ] [ Browse... ]   |
+|  Git Remote URL:  [https://github.com/user/my_skills.git        ] [🔗 Link/Clone ]|
+|  Git Status:      🟢 Up-to-date (Git synced)                                      |
 |                                                                                   |
 +-----------------------------------------------------------------------------------+
 |                                                                                   |
-|  📊 3. THÔNG TIN XEM TRƯỚC (PREVIEW SUMMARY)                                       |
-|  +-----------------------------------------------------------------------------+  |
-|  | - File skills/video_editor/skill.md: Updated (Modified 5 mins ago)         |  |
-|  | - File shared_rules/agents.md: Up-to-date                                  |  |
-|  | - Target Agents: Antigravity, Codex, Claude Code                           |  |
-|  +-----------------------------------------------------------------------------+  |
+|  🤖 2. CẤU HÌNH AGENTS TRÊN MÁY NÀY                                               |
+|  [X] Antigravity   Path: [~/.gemini/config/skills              ] [ Auto-Detect ]|
+|  [X] Codex         Path: [~/.codex/skills                      ] [ Auto-Detect ]|
+|  [X] Claude Code   Path: [~/.claude                            ] [ Auto-Detect ]|
 |                                                                                   |
 +-----------------------------------------------------------------------------------+
 |                                                                                   |
-|  [ 🔍 Preview Changes ]            [ ⚙️ Settings ]         [ 🚀 SMART SYNC NOW ] |
+|  [ 🔍 Preview Changes ]            [ ⚙️ Save Config ]      [ 🚀 SMART SYNC NOW ] |
 |                                                                                   |
 +-----------------------------------------------------------------------------------+
-| 💡 Log: Smart Sync completed successfully in 1.2s. 3 agents updated.             |
+| 💡 LOG BÁO CÁO TIẾN TRÌNH                                                        |
+| +-------------------------------------------------------------------------------+ |
+| | [System] Đã sẵn sàng. Điền đường dẫn Library + Git Remote URL rồi bấm Sync!  | |
+| | [Step 0/3] Kiểm tra liên kết Git Remote URL: https://github.com/...           | |
+| | [Step 1/3] Quét thay đổi từ Agent Folders (bỏ qua .system)...                 | |
+| | [Step 2/3] Kiểm tra và đồng bộ Git Remote...                                 | |
+| | 🎉 === SMART SYNC HOÀN TẤT THÀNH CÔNG ===                                     | |
+| +-------------------------------------------------------------------------------+ |
 +-----------------------------------------------------------------------------------+
 ```
+
 
 ---
 
