@@ -10,27 +10,25 @@ from src.sync_engine import SyncEngine
 from src.adapter_engine import AdapterEngine
 from src.git_engine import GitEngine, GitStatusResult
 
-# Palette màu Dark Theme tương thích cao trên macOS & Windows
+# Palette màu Dark Theme tương thích cao, tương phản cực sắc nét
 BG_DARK = "#1e1e2e"
 CARD_BG = "#2a2b3d"
+ENTRY_BG = "#0f172a"          # Nền ô nhập liệu tối hẳn
+ENTRY_FG = "#f8fafc"          # Ký tự gõ chữ trắng sáng 100% hiển thị cực rõ
 TEXT_COLOR = "#e2e8f0"
 TEXT_MUTED = "#a0aec0"
-BORDER_COLOR = "#4a5568"
 ACCENT_PRIMARY = "#3182ce"
 ACCENT_HOVER = "#4299e1"
-SUCCESS_COLOR = "#38a169"
-WARNING_COLOR = "#dd6b20"
-DANGER_COLOR = "#e53e3e"
 
 class AppGUI(tk.Tk):
-    """Giao diện Desktop mỏng nhẹ, thiết kế chuẩn Dark Mode chạy hoàn hảo trên Mac & Windows."""
+    """Giao diện Desktop mỏng nhẹ, hiển thị siêu rõ nét trên macOS Dark Mode và Windows."""
 
     def __init__(self):
         super().__init__()
 
         self.title("⚡ Skills Auto Sync Tool")
-        self.geometry("820x680")
-        self.minsize(760, 600)
+        self.geometry("840x700")
+        self.minsize(780, 600)
         self.configure(bg=BG_DARK)
 
         # Config & Engines
@@ -56,6 +54,22 @@ class AppGUI(tk.Tk):
         self._build_ui()
         self.refresh_git_status()
 
+    def _create_entry(self, parent, textvariable, width=None):
+        """Hàm tạo Entry với màu tương phản siêu nét (chữ trắng trên nền tối, trỏ chuột trắng)."""
+        return tk.Entry(
+            parent,
+            textvariable=textvariable,
+            font=("Segoe UI", 10, "bold"),
+            bg=ENTRY_BG,
+            fg=ENTRY_FG,
+            insertbackground="#ffffff",
+            highlightbackground="#475569",
+            highlightcolor="#38bdf8",
+            bd=1,
+            relief="solid",
+            width=width
+        )
+
     def _build_ui(self):
         main_frame = tk.Frame(self, bg=BG_DARK, padx=16, pady=16)
         main_frame.pack(fill=tk.BOTH, expand=True)
@@ -79,15 +93,15 @@ class AppGUI(tk.Tk):
         r1 = tk.Frame(sec1, bg=CARD_BG)
         r1.pack(fill=tk.X, pady=4)
         tk.Label(r1, text="Skills Lib Path:", font=("Segoe UI", 10, "bold"), fg=TEXT_COLOR, bg=CARD_BG, width=15, anchor="w").pack(side=tk.LEFT)
-        e_lib = tk.Entry(r1, textvariable=self.library_path_var, font=("Segoe UI", 10), bg="#1a202c", fg="#e2e8f0", insertbackground="white", bd=1, relief="solid")
+        e_lib = self._create_entry(r1, self.library_path_var)
         e_lib.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 8))
-        tk.Button(r1, text="Browse...", font=("Segoe UI", 9), bg="#4a5568", fg="white", activebackground="#718096", activeforeground="white", command=self.browse_library_path).pack(side=tk.LEFT)
+        tk.Button(r1, text="Browse...", font=("Segoe UI", 9, "bold"), bg="#4a5568", fg="white", activebackground="#718096", activeforeground="white", command=self.browse_library_path).pack(side=tk.LEFT)
 
         # Row 1.2: Git Remote URL
         r2 = tk.Frame(sec1, bg=CARD_BG)
         r2.pack(fill=tk.X, pady=4)
         tk.Label(r2, text="Git Remote URL:", font=("Segoe UI", 10, "bold"), fg=TEXT_COLOR, bg=CARD_BG, width=15, anchor="w").pack(side=tk.LEFT)
-        e_url = tk.Entry(r2, textvariable=self.git_remote_url_var, font=("Segoe UI", 10), bg="#1a202c", fg="#e2e8f0", insertbackground="white", bd=1, relief="solid")
+        e_url = self._create_entry(r2, self.git_remote_url_var)
         e_url.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 8))
         tk.Button(r2, text="🔗 Link/Clone Repo", font=("Segoe UI", 9, "bold"), bg="#805ad5", fg="white", activebackground="#9f7aea", activeforeground="white", command=self.link_git_repo).pack(side=tk.LEFT)
 
@@ -124,15 +138,14 @@ class AppGUI(tk.Tk):
             )
             chk.pack(side=tk.LEFT)
 
-
-            ent = tk.Entry(row, textvariable=self.path_vars[key], font=("Segoe UI", 10), bg="#1a202c", fg="#e2e8f0", insertbackground="white", bd=1, relief="solid")
+            ent = self._create_entry(row, self.path_vars[key])
             ent.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 6))
 
-            tk.Button(row, text="Browse", font=("Segoe UI", 9), bg="#4a5568", fg="white", activebackground="#718096", activeforeground="white", command=lambda k=key: self.browse_agent_path(k)).pack(side=tk.LEFT, padx=(0, 4))
-            tk.Button(row, text="Auto Detect", font=("Segoe UI", 9), bg="#2d3748", fg="white", activebackground="#4a5568", activeforeground="white", command=lambda k=key: self.auto_detect_path(k)).pack(side=tk.LEFT)
+            tk.Button(row, text="Browse", font=("Segoe UI", 9, "bold"), bg="#4a5568", fg="white", activebackground="#718096", activeforeground="white", command=lambda k=key: self.browse_agent_path(k)).pack(side=tk.LEFT, padx=(0, 4))
+            tk.Button(row, text="Auto Detect", font=("Segoe UI", 9, "bold"), bg="#2d3748", fg="white", activebackground="#4a5568", activeforeground="white", command=lambda k=key: self.auto_detect_path(k)).pack(side=tk.LEFT)
 
         # --- SECTION 3: ACTION BAR ---
-        sec3 = tk.Frame(main_container_frame:=main_frame, bg=BG_DARK)
+        sec3 = tk.Frame(main_frame, bg=BG_DARK)
         sec3.pack(fill=tk.X, pady=(0, 12))
 
         btn_sync = tk.Button(
@@ -143,14 +156,14 @@ class AppGUI(tk.Tk):
         btn_sync.pack(side=tk.RIGHT, padx=(8, 0))
 
         btn_preview = tk.Button(
-            sec3, text="🔍 Preview Changes", font=("Segoe UI", 10),
+            sec3, text="🔍 Preview Changes", font=("Segoe UI", 10, "bold"),
             bg="#4a5568", fg="white", activebackground="#718096", activeforeground="white",
             bd=0, padx=12, pady=6, cursor="hand2", command=self.preview_changes
         )
         btn_preview.pack(side=tk.RIGHT, padx=(8, 0))
 
         btn_save = tk.Button(
-            sec3, text="⚙️ Save Config", font=("Segoe UI", 10),
+            sec3, text="⚙️ Save Config", font=("Segoe UI", 10, "bold"),
             bg="#2d3748", fg="white", activebackground="#4a5568", activeforeground="white",
             bd=0, padx=12, pady=6, cursor="hand2", command=self.save_current_config
         )
@@ -265,6 +278,14 @@ class AppGUI(tk.Tk):
         lib_path = Path(lib_str)
 
         self.log("\n--- 🔍 PREVIEW SUMMARY ---")
+        
+        # Check Rules Upstream
+        rules_synced, msg_rules = self.adapter_engine.sync_rules_upstream(
+            lib_path, self.config.agent_paths, self.config.selected_agents
+        )
+        if rules_synced:
+            self.log(f"  • {msg_rules}")
+
         res = self.sync_engine.scan_and_sync_upstream(
             lib_path, self.config.agent_paths, self.config.selected_agents, self.config.ignore_patterns
         )
@@ -273,7 +294,7 @@ class AppGUI(tk.Tk):
             self.log(f"Phát hiện {len(res.files_synced_to_library)} file sửa mới ở Agent:")
             for f in res.files_synced_to_library:
                 self.log(f"  • {f}")
-        else:
+        elif not rules_synced:
             self.log("Không có file sửa mới ở Agent. Library đã cập nhật.")
 
         self.refresh_git_status()
@@ -298,14 +319,22 @@ class AppGUI(tk.Tk):
             ok_link, msg_link = self.git_engine.ensure_git_repo_linked(lib_path, remote_url)
             self.log(f"  {'✓' if ok_link else '⚠️'} {msg_link}")
 
-        # BƯỚC 1: UPSTREAM SYNC (Gom file sửa từ Agent về Library)
+        # BƯỚC 1: UPSTREAM SYNC (Gom file skill & AGENTS.md/CLAUDE.md sửa từ Agent về Library)
         self.log("[Step 1/3] Quét thay đổi từ Agent Folders (bỏ qua .system)...")
+        rules_synced, msg_rules = self.adapter_engine.sync_rules_upstream(
+            lib_path, self.config.agent_paths, self.config.selected_agents
+        )
+        if rules_synced:
+            self.log(f"  ✓ {msg_rules}")
+
         up_res = self.sync_engine.scan_and_sync_upstream(
             lib_path, self.config.agent_paths, self.config.selected_agents, self.config.ignore_patterns
         )
 
+        has_any_change = up_res.has_library_changes or rules_synced
+
         if up_res.has_library_changes:
-            self.log(f"  ✓ Đã gom {len(up_res.files_synced_to_library)} file sửa đổi mới từ Agent về Library.")
+            self.log(f"  ✓ Đã gom {len(up_res.files_synced_to_library)} file skill sửa đổi từ Agent về Library.")
 
         # BƯỚC 2: GIT SMART SYNC
         self.log("[Step 2/3] Kiểm tra và đồng bộ Git Remote...")
@@ -316,7 +345,7 @@ class AppGUI(tk.Tk):
             ok, msg = self.git_engine.execute_smart_sync(lib_path, "AUTO_PULL")
             self.log(f"  {'✓' if ok else '❌'} {msg}")
 
-        elif git_res.status == "AHEAD" or up_res.has_library_changes:
+        elif git_res.status == "AHEAD" or has_any_change:
             self.log("  ➜ Committing & Pushing thay đổi mới lên Git...")
             ok, msg = self.git_engine.execute_smart_sync(lib_path, "AUTO_PUSH")
             self.log(f"  {'✓' if ok else '❌'} {msg}")
