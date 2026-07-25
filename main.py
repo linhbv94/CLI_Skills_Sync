@@ -1,7 +1,10 @@
-#!/usr/bin/env python3
+import os
 import sys
 import argparse
 from pathlib import Path
+
+# Suppress macOS Tk deprecation warning
+os.environ["TK_SILENCE_DEPRECATION"] = "1"
 
 from src.config_manager import ConfigManager
 from src.sync_engine import SyncEngine
@@ -14,12 +17,17 @@ def run_cli_mode():
     config_mgr = ConfigManager()
     config = config_mgr.config
 
-    lib_path_str = config.library_path or str(Path.cwd())
-    lib_path = Path(lib_path_str)
-
-    if not lib_path.exists():
-        print(f"❌ Lỗi: Thư viện gốc '{lib_path}' không tồn tại. Vui lòng chạy GUI để cấu hình.")
+    lib_path_str = config.library_path
+    if not lib_path_str:
+        print("❌ Lỗi: Chưa cấu hình đường dẫn Thư viện Skills Trung tâm (library_path).")
+        print("💡 Vui lòng mở GUI (chạy `python3 main.py`) để chọn folder Thư viện Skills gốc.")
         sys.exit(1)
+
+    lib_path = Path(lib_path_str)
+    if not lib_path.exists():
+        print(f"❌ Lỗi: Thư viện gốc '{lib_path}' không tồn tại. Vui lòng kiểm tra lại đường dẫn.")
+        sys.exit(1)
+
 
     sync_engine = SyncEngine()
     adapter_engine = AdapterEngine()

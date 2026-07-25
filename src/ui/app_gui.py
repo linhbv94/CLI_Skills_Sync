@@ -90,7 +90,7 @@ class AppGUI(tk.Tk):
             row = ttk.Frame(sec2)
             row.pack(fill=tk.X, pady=4)
 
-            ttk.Checkbutton(row, text=label_text, variable=self.agent_vars[key]).pack(side=tk.LEFT, width=28)
+            ttk.Checkbutton(row, text=label_text, variable=self.agent_vars[key], width=32).pack(side=tk.LEFT)
             ttk.Entry(row, textvariable=self.path_vars[key]).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 6))
             ttk.Button(row, text="Browse", command=lambda k=key: self.browse_agent_path(k)).pack(side=tk.LEFT, padx=(0, 4))
             ttk.Button(row, text="Auto Detect", command=lambda k=key: self.auto_detect_path(k)).pack(side=tk.LEFT)
