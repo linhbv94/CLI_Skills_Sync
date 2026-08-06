@@ -351,8 +351,20 @@ def print_detected_changes(config, config_mgr, sync_engine, git_engine):
                 git_msg = f"➔ Có {git_res.behind_count} commit mới trên Remote chưa kéo (Behind)."
                 has_changes = True
             elif git_res.status == "AHEAD":
-                git_msg = f"➔ Có {git_res.ahead_count} commit cục bộ mới chưa đẩy (Ahead)."
-                has_changes = True
+                if git_res.ahead_count > 0:
+                    dirty_count = len(git_res.dirty_files) if git_res.dirty_files else 0
+                    if dirty_count > 0:
+                        git_msg = f"➔ Có {git_res.ahead_count} commit chưa đẩy & {dirty_count} tệp sửa đổi chưa commit."
+                    else:
+                        git_msg = f"➔ Có {git_res.ahead_count} commit cục bộ mới chưa đẩy (Ahead)."
+                    has_changes = True
+                else:
+                    dirty_count = len(git_res.dirty_files) if git_res.dirty_files else 0
+                    if dirty_count > 0:
+                        git_msg = f"➔ Thư viện có {dirty_count} tệp sửa đổi chưa commit."
+                        has_changes = True
+                    else:
+                        git_msg = "➔ Đã đồng bộ mới nhất (Up-to-date)."
             elif git_res.status == "DIVERGED":
                 git_msg = "➔ Xung đột (Diverged) - Cả Local và Remote đều có commit mới."
                 has_changes = True
@@ -459,6 +471,10 @@ def main():
             input("\nNhấn Enter để quay lại Menu...")
         elif choice == "4":
             print("\nCảm ơn bạn đã sử dụng công cụ! Tạm biệt.")
+            import platform
+            if platform.system() == "Darwin":
+                import subprocess
+                subprocess.Popen(["osascript", "-e", 'tell application "Terminal" to close front window'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             sys.exit(0)
         else:
             print("\n❌ Lựa chọn không hợp lệ. Vui lòng nhập số từ 1 đến 4.")
