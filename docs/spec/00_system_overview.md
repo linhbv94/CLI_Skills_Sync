@@ -31,6 +31,7 @@ Tất cả các tài liệu đặc tả liên kết bằng đường dẫn tươ
 - 🗄️ [04_api_data.md](04_api_data.md): Schema config.json tối giản & Module API Specs (`_spec4_api_data`)
 - 🧪 [05_qa_acceptance.md](05_qa_acceptance.md): Tiêu chí Nghiệm thu Gherkin & Ma trận Edge Cases (`_spec5_qa_acceptance`)
 - 🎬 [06_demo_presentation.md](06_demo_presentation.md): Kịch bản Trình diễn Demo CLI (`_spec6_demo_presentation`)
+- 🖥️ [06_phase_2_desktop_app.md](06_phase_2_desktop_app.md): Giao diện Đồ họa Desktop UI & Đối sánh (Benchmarking) (Phase 2 Spec)
 
 ---
 
@@ -78,10 +79,10 @@ Tất cả các tài liệu đặc tả liên kết bằng đường dẫn tươ
 
 | Tính năng | Trong Phạm vi (In-Scope) | Ngoài Phạm vi (Out-of-Scope) |
 | :--- | :--- | :--- |
-| **Giao diện** | Giao diện dòng lệnh CLI tương tác đơn giản | Giao diện đồ họa Desktop GUI (Tkinter, CustomTkinter) |
+| **Giao diện** | Giao diện dòng lệnh CLI (Song ngữ) & Giao diện đồ họa Desktop GUI (PyWebView - Phase 2) | Giao diện đồ họa Tkinter/PyQt cũ |
 | **Agent Hỗ trợ** | Antigravity, Codex, Claude Code (bật tắt qua toggle `0`/`1`) | Custom LLM plugins tự định nghĩa bên ngoài |
 | **Cơ chế Sync** | Auto Git Pull/Push & Đồng bộ chéo giữa các thư mục cục bộ | Giao diện merge code 3-way đồ họa phức tạp |
-| **Lưu cấu hình** | `config.json` cùng cấp với file thực thi | Đồng bộ config settings trực tiếp qua server cloud riêng |
+| **Lưu cấu hình** | `config.json` cùng cấp (CLI) & `config.json` hệ thống (UI/CLI Phase 2) | Đồng bộ config settings trực tiếp qua server cloud riêng |
 
 ---
 
@@ -89,6 +90,7 @@ Tất cả các tài liệu đặc tả liên kết bằng đường dẫn tươ
 
 Khi AI Dev Agent thực thi viết mã dự án này, bắt buộc tuân thủ:
 1. Ngôn ngữ: **Python 3.10+** (sử dụng thư viện chuẩn, module `subprocess`, `shutil`, `pathlib`).
-2. Giao diện: Tuyệt đối không import `tkinter` hay các thư viện GUI. Sử dụng CLI Menu chuẩn nhập phím bằng `input()`.
+2. Giao diện: Sử dụng CLI Menu chuẩn song ngữ trong `main.py`. Các logic giao diện UI Phase 2 sẽ được tách biệt hoàn toàn vào `gui.py` và sử dụng PyWebView.
 3. Đặt tên file & thư mục: Tuân thủ quy chuẩn **snake_case** (không dùng `-`).
-4. Định vị file cấu hình: Sử dụng đường dẫn động xác định theo vị trí của file thực thi (`sys.executable` hoặc `__file__`).
+4. Định vị file cấu hình: Chuyển đổi định tuyến linh hoạt từ file chạy cục bộ sang Application Support / AppData hệ thống trong Phase 2.
+5. Kiểm thử: Đảm bảo toàn bộ unit tests chạy xanh 100% trên cả Windows và macOS.
