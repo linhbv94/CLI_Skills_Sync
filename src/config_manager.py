@@ -16,7 +16,8 @@ DEFAULT_IGNORE_PATTERNS = [
 
 @dataclass
 class AppConfig:
-    version: str = "2.1.0"
+    version: str = "2.2.0"
+    lang: str = "en"
     agents: Dict[str, int] = field(default_factory=lambda: {"anti": 1, "codex": 1, "claude": 0})
     skills_lib: str = ""
     git_repo: str = ""
@@ -66,7 +67,8 @@ class ConfigManager:
                 with open(self.config_file, "r", encoding="utf-8") as f:
                     data = json.load(f)
                 
-                self.config.version = data.get("version", "2.1.0")
+                self.config.version = data.get("version", "2.2.0")
+                self.config.lang = data.get("lang", "en")
                 self.config.skills_lib = data.get("skills_lib", "")
                 git_repo = data.get("git_repo", "")
                 if git_repo.startswith("/http"):
@@ -94,6 +96,7 @@ class ConfigManager:
         """Lưu cấu hình hiện tại vào config.json."""
         data = {
             "version": self.config.version,
+            "lang": self.config.lang,
             "agents": self.config.agents,
             "skills_lib": self.config.skills_lib,
             "git_repo": self.config.git_repo,

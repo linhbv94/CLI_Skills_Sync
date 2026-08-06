@@ -1,3 +1,4 @@
+import os
 import hashlib
 from pathlib import Path
 from typing import List, Dict, Tuple
@@ -8,6 +9,17 @@ CLAUDE_HEADER_METADATA = """# Claude Code Project & Global Instructions
 > **Note:** Follow these global rules and guidelines strictly.
 
 """
+
+ADAPTER_LOCALIZED = {
+    "en": {
+        "dry_run_msg": "Will collect modified rules from {} to Central Library.",
+        "sync_ok_msg": "Successfully collected AGENTS.md/CLAUDE.md from {} to Central Library."
+    },
+    "vi": {
+        "dry_run_msg": "Sẽ gom rules sửa đổi từ {} về Central Library.",
+        "sync_ok_msg": "Đã gom AGENTS.md/CLAUDE.md sửa đổi từ {} về Central Library."
+    }
+}
 
 class AdapterEngine:
     """Chịu trách nhiệm chuyển đổi quy tắc chung shared_rules/agents.md <-> AGENTS.md / CLAUDE.md 2 chiều."""
@@ -48,11 +60,13 @@ class AdapterEngine:
         agent_paths: Dict[str, str],
         selected_agents: List[str],
         dry_run: bool = False,
+        lang: str = "en"
     ) -> Tuple[bool, str]:
         """
         [Upstream Rules Sync]: Phát hiện nếu AGENTS.md hoặc CLAUDE.md ở bất kỳ Agent nào mới hơn
         bản trong Central Library (AGENTS.md), tự động gom về Library.
         """
+        l = ADAPTER_LOCALIZED.get(lang, ADAPTER_LOCALIZED["en"])
         lib_root_file = library_path / "AGENTS.md"
 
         lib_mtime = lib_root_file.stat().st_mtime if lib_root_file.exists() else 0
@@ -76,7 +90,7 @@ class AdapterEngine:
 
         if newer_agent_rules and newer_agent_rules.exists():
             if dry_run:
-                return True, f"Sẽ gom rules sửa đổi từ {source_info} về Central Library."
+                return True, l["dry_run_msg"].format(source_info)
             try:
                 with open(newer_agent_rules, "r", encoding="utf-8") as f:
                     content = f.read()
@@ -89,11 +103,10 @@ class AdapterEngine:
                     f.write(content)
 
                 # Đồng bộ timestamp mtime để giữ tính nhất quán
-                import os
                 agent_mtime = newer_agent_rules.stat().st_mtime
                 os.utime(lib_root_file, (agent_mtime, agent_mtime))
 
-                return True, f"Đã gom AGENTS.md/CLAUDE.md sửa đổi từ {source_info} về Central Library."
+                return True, l["sync_ok_msg"].format(source_info)
             except Exception as e:
                 print(f"[AdapterEngine] Lỗi gom upstream rules: {e}")
 
@@ -103,11 +116,12 @@ class AdapterEngine:
         self,
         library_path: Path,
         agent_paths: Dict[str, str],
-        selected_agents: List[str]
+        selected_agents: List[str],
+        lang: str = "en"
     ) -> List[str]:
         """Đọc quy tắc chung và render/deploy file instruction cho tất cả Agent active."""
         # 1. Gom Upstream trước nếu có thay đổi từ Agent
-        self.sync_rules_upstream(library_path, agent_paths, selected_agents)
+        self.sync_rules_upstream(library_path, agent_paths, selected_agents, lang=lang)
 
         # 2. Tìm nguồn rules file chuẩn trong Library
         source_agents_md = library_path / "AGENTS.md"
@@ -143,7 +157,6 @@ class AdapterEngine:
                     target_file.parent.mkdir(parents=True, exist_ok=True)
                     with open(target_file, "w", encoding="utf-8") as f:
                         f.write(rules_content)
-                    import os
                     os.utime(target_file, (lib_mtime, lib_mtime))
                     deployed_list.append(f"{agent_name} -> {target_file.name}")
                 except Exception as e:
@@ -155,7 +168,6 @@ class AdapterEngine:
                     claude_content = CLAUDE_HEADER_METADATA + rules_content
                     with open(target_claude_file, "w", encoding="utf-8") as f:
                         f.write(claude_content)
-                    import os
                     os.utime(target_claude_file, (lib_mtime, lib_mtime))
                     deployed_list.append(f"claude -> CLAUDE.md")
                 except Exception as e:

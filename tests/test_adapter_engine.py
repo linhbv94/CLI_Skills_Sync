@@ -24,6 +24,7 @@ class AdapterEngineTests(unittest.TestCase):
                 {"codex": str(agent)},
                 ["codex"],
                 dry_run=True,
+                lang="vi"
             )
 
             self.assertTrue(changed)
