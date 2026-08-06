@@ -40,7 +40,10 @@ File cấu hình `config.json` sẽ không đặt cùng cấp với file chạy 
 * **macOS:** `~/Library/Application Support/Skills_Sync/config.json`
 * **Windows:** `%APPDATA%\Skills_Sync\config.json`
 
-Cả bản CLI (`main.py`) và bản UI (`gui.py`) đều trỏ chung về đường dẫn này, đảm bảo dữ liệu đồng bộ thời gian thực.
+Cả bản CLI (`main.py`) và bản UI (`gui.py`) đều trỏ chung về đường dẫn này, đảm bảo dữ liệu đồng bộ thời gian thực. 
+
+**💡 Điểm mấu chốt của Pre-Phase 2:**
+Việc đưa config về system lib và dựng sẵn Onboarding Setup cùng các luồng chỉnh sửa cấu hình ngay trong bản CLI (ở Pre-Phase 2) giúp việc viết UI sau này cực kỳ đơn giản. Bản UI chỉ cần đọc và ghi đè trực tiếp lên file `config.json` hệ thống này mà không cần viết lại logic dò đường dẫn hay logic onboarding thô sơ nữa. Nhân xử lý Core của cả 2 bản là đồng nhất.
 
 ### B. Kiến trúc Giao diện UI (Desktop Webview Engine)
 Chúng ta sẽ sử dụng thư viện **PyWebView** để mở một Native Window của hệ điều hành và hiển thị giao diện được thiết kế bằng công nghệ Web (HTML/CSS/JS).

@@ -16,7 +16,7 @@ DEFAULT_IGNORE_PATTERNS = [
 
 @dataclass
 class AppConfig:
-    version: str = "2.2.0"
+    version: str = "2.3.0"
     lang: str = "en"
     agents: Dict[str, int] = field(default_factory=lambda: {"anti": 1, "codex": 1, "claude": 0})
     skills_lib: str = ""
@@ -24,17 +24,17 @@ class AppConfig:
     ignore_patterns: List[str] = field(default_factory=lambda: list(DEFAULT_IGNORE_PATTERNS))
 
 class ConfigManager:
-    """Quản lý nạp, ghi cấu hình config.json cùng cấp với file thực thi/script."""
+    """Quản lý nạp, ghi cấu hình config.json tại thư mục hệ thống chuẩn."""
 
     def __init__(self, config_dir: Path = None):
         if config_dir is None:
-            # Xác định thư mục cùng cấp với file thực thi/script
-            if getattr(sys, 'frozen', False):
-                # Nếu chạy từ file build (PyInstaller)
-                self.config_dir = Path(sys.executable).parent
+            # Xác định thư mục hệ thống Application Support (macOS) hoặc AppData (Windows)
+            home = Path.home()
+            if sys.platform == "win32":
+                app_data = Path(os.environ.get("APPDATA", home / "AppData" / "Roaming"))
+                self.config_dir = app_data / "Skills_Sync"
             else:
-                # Nếu chạy từ Python script thông thường (dự kiến ở project root)
-                self.config_dir = Path(__file__).parent.parent.absolute()
+                self.config_dir = home / "Library" / "Application Support" / "Skills_Sync"
         else:
             self.config_dir = Path(config_dir)
 

@@ -17,7 +17,7 @@ CURRENT_LANG = "en"
 
 LOCALIZED = {
     "en": {
-        "menu_title": "======================================================================\n⚡ SKILLS AUTO SYNC TOOL (v2.2.0) - CLI INTERACTIVE MENU\n======================================================================",
+        "menu_title": "======================================================================\n⚡ SKILLS AUTO SYNC TOOL (v2.3.0) - CLI INTERACTIVE MENU\n======================================================================",
         "config_loaded": "[INFO] Config file loaded from: {}\n",
         "config_settings": "[CONFIG SETTINGS]",
         "skills_lib": "  └─ Central Library (skills_lib): {}",
@@ -46,17 +46,48 @@ LOCALIZED = {
         "option_sync": "  [1] Sync now (Smart Sync Now)",
         "option_refresh": "  [2] Refresh status",
         "option_cleanup": "  [3] Clean up environment",
-        "option_exit": "  [4] Exit application",
-        "your_choice": "Your choice (1/2/3/4): ",
-        "invalid_choice": "\n❌ Invalid choice. Please enter a number between 1 and 4.",
+        "option_edit_config": "  [4] Edit configuration",
+        "option_open_folder": "  [5] Open configuration folder",
+        "option_exit": "  [6] Exit application",
+        "your_choice": "Your choice (1/2/3/4/5/6): ",
+        "invalid_choice": "\n❌ Invalid choice. Please enter a number between 1 and 6.",
         "exit_msg": "\nThank you for using the tool! Goodbye.",
         
-        # Init config screen
-        "init_config_title": "======================================================================\n⚡ SKILLS AUTO SYNC TOOL - INITIAL CONFIGURATION\n======================================================================",
-        "init_config_created": "[INFO] Created a default config.json file in the same directory.",
-        "init_config_path": "[INFO] Config file path: {}\n",
-        "init_config_guide": "💡 Please open config.json with a Text Editor to configure:\n  - 'skills_lib': Absolute path to your Central Library.\n  - 'git_repo': Git remote repository link to sync.\n  - 'agents': Set 1 to enable, 0 to disable.",
-        "press_enter_exit": "\nPress Enter to continue (after you have edited and saved config.json), or type 'q' to exit: ",
+        # Onboarding
+        "onboard_title": "======================================================================\n⚡ SKILLS AUTO SYNC TOOL - ONBOARDING SETUP\n======================================================================",
+        "onboard_select_lang": "Please select your language / Vui lòng chọn ngôn ngữ hiển thị:\n\n  [1] English\n  [2] Tiếng Việt\n",
+        "onboard_lang_choice": "Your choice / Lựa chọn của bạn (1/2): ",
+        "onboard_agents_title": "======================================================================\n⚡ SKILLS AUTO SYNC TOOL - ONBOARDING SETUP (English)\n======================================================================",
+        "onboard_agents_guide": "💡 Please configure activation (1) or deactivation (0) for AI Agents.\nInput order: Antigravity, Codex, Claude Code.\nExample: 1,1,0 to enable Antigravity & Codex, and disable Claude.",
+        "onboard_agents_prompt": "Enter Agents config (e.g. 1,1,0): ",
+        "onboard_invalid_agents": "❌ Invalid format. Please enter exactly three numbers (0 or 1), e.g., 1,1,0",
+        "onboard_path_title": "======================================================================\n⚡ SKILLS AUTO SYNC TOOL - ONBOARDING SETUP (English)\n======================================================================",
+        "onboard_path_info": "[INFO] Configuration is being created at: {}\n",
+        "onboard_path_guide": "💡 Please enter the absolute path to your Central Library (skills_lib).\nThis is the central folder where skills and rules will be synchronized.",
+        "onboard_path_prompt": "Enter path (e.g. /path/to/skills_lib): ",
+        "onboard_git_title": "======================================================================\n⚡ SKILLS AUTO SYNC TOOL - ONBOARDING SETUP (English)\n======================================================================",
+        "onboard_git_guide": "💡 Please paste your Git Remote Repository link (HTTPS/SSH) for cloud sync.\n(If you want to run in local offline mode without Git, just press Enter to skip).",
+        "onboard_git_prompt": "Enter repository link (Press Enter to skip): ",
+        "onboard_invalid_lang": "❌ Invalid choice. Defaulting to English.",
+        "onboard_invalid_path": "❌ The directory path cannot be empty. Please try again.",
+
+        # Config Editing Submenu
+        "edit_config_title": "======================================================================\n⚡ SKILLS AUTO SYNC TOOL - EDIT CONFIGURATION\n======================================================================",
+        "edit_config_prompt": "Please select the setting you want to change:\n\n  [1] Edit Central Library path (skills_lib)\n  [2] Edit Git Remote Repository URL (git_repo)\n  [3] Edit AI Agents activation (agents)\n  [4] Edit display language (lang)\n  [5] Return to main menu\n",
+        "edit_config_choice": "Your choice (1/2/3/4/5): ",
+        "edit_config_path_guide": "💡 Please enter the absolute path to your Central Library (skills_lib).\n(Enter 'q' to cancel and return without saving).",
+        "edit_config_path_prompt": "Enter path (e.g. /path/to/skills_lib) or 'q' to cancel: ",
+        "edit_config_git_guide": "💡 Enter your new Git Remote Repository link.\n(Press Enter to clear Git remote for local offline sync, or enter 'q' to cancel).",
+        "edit_config_git_prompt": "Enter new link (Enter to clear, 'q' to cancel): ",
+        "edit_config_agents_guide": "💡 Configure activation (1) or deactivation (0) for AI Agents (Antigravity, Codex, Claude Code).\nExample: 1,1,0 (Enter 'q' to cancel).",
+        "edit_config_agents_prompt": "Enter new Agents config (e.g. 1,1,0) or 'q' to cancel: ",
+        "edit_config_lang_prompt": "Select new language (1 for en, 2 for vi, or 'q' to cancel): ",
+        "edit_config_saved": "✓ Configuration updated successfully!",
+
+        # Open Config Folder
+        "open_folder_start": "➔ Opening system folder containing config.json...\n  Path: {}",
+        "open_folder_ok": "✓ Folder opened successfully. Returning to Main Menu...",
+        "open_folder_err": "❌ Error opening folder: {}",
         
         # Sync progress screen
         "sync_start": "\n>>> Starting Smart Sync (Local & Git)...",
@@ -115,7 +146,7 @@ LOCALIZED = {
         "cleanup_completed": "\n🎉 ENVIRONMENT CLEANED UP SUCCESSFULLY!"
     },
     "vi": {
-        "menu_title": "======================================================================\n⚡ SKILLS AUTO SYNC TOOL (v2.2.0) - CLI INTERACTIVE MENU\n======================================================================",
+        "menu_title": "======================================================================\n⚡ SKILLS AUTO SYNC TOOL (v2.3.0) - CLI INTERACTIVE MENU\n======================================================================",
         "config_loaded": "[INFO] File cấu hình nạp từ: {}\n",
         "config_settings": "[CONFIG SETTINGS]",
         "skills_lib": "  └─ Thư viện tổng (skills_lib): {}",
@@ -144,22 +175,53 @@ LOCALIZED = {
         "option_sync": "  [1] Đồng bộ ngay (Smart Sync Now)",
         "option_refresh": "  [2] Làm mới trạng thái (Refresh status)",
         "option_cleanup": "  [3] Dọn dẹp môi trường (Clean up environment)",
-        "option_exit": "  [4] Thoát ứng dụng",
-        "your_choice": "Lựa chọn của bạn (1/2/3/4): ",
-        "invalid_choice": "\n❌ Lựa chọn không hợp lệ. Vui lòng nhập số từ 1 đến 4.",
+        "option_edit_config": "  [4] Sửa cấu hình (Edit configuration)",
+        "option_open_folder": "  [5] Mở thư mục cấu hình (Open config folder)",
+        "option_exit": "  [6] Thoát ứng dụng",
+        "your_choice": "Lựa chọn của bạn (1/2/3/4/5/6): ",
+        "invalid_choice": "\n❌ Lựa chọn không hợp lệ. Vui lòng nhập số từ 1 đến 6.",
         "exit_msg": "\nCảm ơn bạn đã sử dụng công cụ! Tạm biệt.",
         
-        # Init config screen
-        "init_config_title": "======================================================================\n⚡ SKILLS AUTO SYNC TOOL - CẤU HÌNH BAN ĐẦU\n======================================================================",
-        "init_config_created": "[INFO] Đã tạo file config.json mẫu cùng cấp với file chạy.",
-        "init_config_path": "[INFO] Đường dẫn file cấu hình: {}\n",
-        "init_config_guide": "💡 Vui lòng mở file config.json bằng Text Editor để điền thông số:\n  - 'skills_lib': Đường dẫn tuyệt đối đến Central Library của bạn.\n  - 'git_repo': Link Git remote repository để đồng bộ.\n  - 'agents': Thiết lập 1 cho agent muốn dùng, 0 để tắt.",
-        "press_enter_exit": "\nNhấn Enter để tiếp tục (sau khi bạn đã sửa và lưu file config.json), hoặc gõ 'q' để thoát: ",
+        # Onboarding
+        "onboard_title": "======================================================================\n⚡ SKILLS AUTO SYNC TOOL - CẤU HÌNH BAN ĐẦU (ONBOARDING)\n======================================================================",
+        "onboard_select_lang": "Please select your language / Vui lòng chọn ngôn ngữ hiển thị:\n\n  [1] English\n  [2] Tiếng Việt\n",
+        "onboard_lang_choice": "Your choice / Lựa chọn của bạn (1/2): ",
+        "onboard_agents_title": "======================================================================\n⚡ SKILLS AUTO SYNC TOOL - CẤU HÌNH BAN ĐẦU (Tiếng Việt)\n======================================================================",
+        "onboard_agents_guide": "💡 Vui lòng thiết lập kích hoạt (1) hoặc vô hiệu hóa (0) cho các AI Agent.\nThứ tự nhập tương ứng: Antigravity, Codex, Claude Code.\nVí dụ: 1,1,0 để bật Antigravity & Codex, tắt Claude.",
+        "onboard_agents_prompt": "Nhập cấu hình Agents (ví dụ: 1,1,0): ",
+        "onboard_invalid_agents": "❌ Định dạng nhập không hợp lệ. Vui lòng nhập đúng 3 số (0 hoặc 1), ví dụ: 1,1,0",
+        "onboard_path_title": "======================================================================\n⚡ SKILLS AUTO SYNC TOOL - CẤU HÌNH BAN ĐẦU (Tiếng Việt)\n======================================================================",
+        "onboard_path_info": "[INFO] File cấu hình đang được tạo tại: {}\n",
+        "onboard_path_guide": "💡 Vui lòng nhập đường dẫn tuyệt đối đến Thư viện tổng của bạn (skills_lib).\nĐây là thư mục trung tâm để đồng bộ kỹ năng và quy tắc.",
+        "onboard_path_prompt": "Nhập đường dẫn (ví dụ: /path/to/skills_lib): ",
+        "onboard_git_title": "======================================================================\n⚡ SKILLS AUTO SYNC TOOL - CẤU HÌNH BAN ĐẦU (Tiếng Việt)\n======================================================================",
+        "onboard_git_guide": "💡 Vui lòng dán link Git Remote Repository (HTTPS/SSH) để đồng bộ đám mây.\n(Nếu bạn muốn chạy chế độ Offline cục bộ không dùng Git, chỉ cần nhấn Enter để bỏ qua).",
+        "onboard_git_prompt": "Nhập link repo (Nhấn Enter để bỏ qua): ",
+        "onboard_invalid_lang": "❌ Lựa chọn không hợp lệ. Mặc định dùng Tiếng Việt.",
+        "onboard_invalid_path": "❌ Đường dẫn thư mục không được để trống. Vui lòng nhập lại.",
+
+        # Config Editing Submenu
+        "edit_config_title": "======================================================================\n⚡ SKILLS AUTO SYNC TOOL - CHỈNH SỬA CẤU HÌNH (EDIT CONFIG)\n======================================================================",
+        "edit_config_prompt": "Vui lòng lựa chọn thông số cần thay đổi:\n\n  [1] Sửa đường dẫn Thư viện tổng (skills_lib)\n  [2] Sửa link Git Remote Repository (git_repo)\n  [3] Sửa cấu hình kích hoạt AI Agents\n  [4] Sửa ngôn ngữ hiển thị (lang)\n  [5] Trở về Menu chính\n",
+        "edit_config_choice": "Lựa chọn của bạn (1/2/3/4/5): ",
+        "edit_config_path_guide": "💡 Vui lòng nhập đường dẫn tuyệt đối đến Thư viện tổng của bạn (skills_lib).\n(Nhập 'q' để hủy bỏ và quay về menu trước đó mà không lưu).",
+        "edit_config_path_prompt": "Nhập đường dẫn (ví dụ: /path/to/skills_lib) hoặc nhập 'q' để hủy bỏ: ",
+        "edit_config_git_guide": "💡 Nhập link Git Remote Repository mới của bạn.\n(Nhấn Enter để trống -> Chạy offline cục bộ, hoặc nhập 'q' để hủy bỏ).",
+        "edit_config_git_prompt": "Nhập link mới (Enter để xóa, 'q' để hủy): ",
+        "edit_config_agents_guide": "💡 Thiết lập kích hoạt (1) hoặc vô hiệu hóa (0) cho các AI Agent (Antigravity, Codex, Claude Code).\nVí dụ nhập: 1,1,0 (Nhập 'q' để hủy bỏ).",
+        "edit_config_agents_prompt": "Nhập cấu hình Agents mới (ví dụ: 1,1,0) hoặc nhập 'q' để hủy bỏ: ",
+        "edit_config_lang_prompt": "Chọn ngôn ngữ hiển thị mới (1 cho en, 2 cho vi, hoặc nhập 'q' để hủy bỏ): ",
+        "edit_config_saved": "✓ Cập nhật cấu hình thành công!",
+
+        # Open Config Folder
+        "open_folder_start": "➔ Đang mở thư mục hệ thống chứa file config.json...\n  Đường dẫn: {}",
+        "open_folder_ok": "✓ Đã mở thư mục thành công. Quay lại Menu chính...",
+        "open_folder_err": "❌ Không thể mở thư mục: {}",
         
         # Sync progress screen
         "sync_start": "\n>>> Bắt đầu tiến trình Smart Sync cục bộ & Git...",
         "sync_check_git": "\n[1/3] Kiểm tra Git Repository...",
-        "sync_err_lib_empty": "❌ Lỗi: Thư viện tổng (skills_lib) trống.",
+        "sync_err_lib_empty": "❌ Lỗi: Thư viện tổng (skills_lib) trống hoặc chưa được cấu hình.",
         "sync_git_local_only": "  ⚠️ Git Remote chưa cấu hình. Chạy chế độ chỉ đồng bộ cục bộ (Local Sync).",
         "sync_active_agents": "  Active Agents: {}",
         "sync_active_agents_none": "Không có",
@@ -613,23 +675,63 @@ def main():
     if CURRENT_LANG not in ["en", "vi"]:
         CURRENT_LANG = "en"
 
-    # Kiểm tra cấu hình ban đầu
-    while not config.skills_lib:
+    # Kiểm tra cấu hình ban đầu (Onboarding Setup)
+    if not config.skills_lib:
         clear_screen()
-        print(t("init_config_title"))
-        print(t("init_config_created"))
-        print(t("init_config_path", config_mgr.config_file))
-        print(t("init_config_guide"))
         print("======================================================================")
-        choice = input(t("press_enter_exit")).strip().lower()
-        if choice in ["q", "exit", "quit"]:
-            sys.exit(0)
-        
-        # Tải lại cấu hình
-        config = config_mgr.load_config()
-        CURRENT_LANG = config.lang if hasattr(config, "lang") else "en"
-        if CURRENT_LANG not in ["en", "vi"]:
+        print("⚡ SKILLS AUTO SYNC TOOL - ONBOARDING SETUP")
+        print("======================================================================")
+        print("Please select your language / Vui lòng chọn ngôn ngữ hiển thị:\n")
+        print("  [1] English")
+        print("  [2] Tiếng Việt\n")
+        lang_choice = input("Your choice / Lựa chọn của bạn (1/2): ").strip()
+        if lang_choice == "2":
+            CURRENT_LANG = "vi"
+        else:
             CURRENT_LANG = "en"
+        config.lang = CURRENT_LANG
+        
+        # Screen 2: Setup AI Agents
+        clear_screen()
+        print(t("onboard_agents_title"))
+        print(t("onboard_agents_guide"))
+        print()
+        while True:
+            agents_choice = input(t("onboard_agents_prompt")).strip()
+            vals = [c for c in agents_choice if c in ("0", "1")]
+            if len(vals) == 3:
+                config.agents = {
+                    "anti": int(vals[0]),
+                    "codex": int(vals[1]),
+                    "claude": int(vals[2])
+                }
+                break
+            else:
+                print(t("onboard_invalid_agents"))
+        
+        # Screen 3: Central library path
+        clear_screen()
+        print(t("onboard_path_title"))
+        print(t("onboard_path_info", config_mgr.config_file))
+        print(t("onboard_path_guide"))
+        print()
+        skills_lib = ""
+        while not skills_lib:
+            skills_lib = input(t("onboard_path_prompt")).strip()
+            if not skills_lib:
+                print(t("onboard_invalid_path"))
+        config.skills_lib = skills_lib
+        
+        # Screen 4: Git repo URL
+        clear_screen()
+        print(t("onboard_git_title"))
+        print(t("onboard_git_guide"))
+        print()
+        git_repo = input(t("onboard_git_prompt")).strip()
+        config.git_repo = git_repo
+        
+        # Lưu cấu hình
+        config_mgr.save_config()
 
     sync_engine = SyncEngine()
     adapter_engine = AdapterEngine()
@@ -665,6 +767,8 @@ def main():
         print(t("option_sync"))
         print(t("option_refresh"))
         print(t("option_cleanup"))
+        print(t("option_edit_config"))
+        print(t("option_open_folder"))
         print(t("option_exit"))
         print("======================================================================")
         
@@ -679,6 +783,111 @@ def main():
             run_cleanup_environment(config_mgr, git_engine)
             input(t("press_enter_back"))
         elif choice == "4":
+            # Chỉnh sửa cấu hình (Edit Configuration Submenu)
+            while True:
+                clear_screen()
+                print(t("edit_config_title"))
+                print(t("edit_config_prompt"))
+                sub_choice = input(t("edit_config_choice")).strip()
+                if sub_choice == "1":
+                    clear_screen()
+                    print(t("edit_config_title"))
+                    print(t("edit_config_path_guide"))
+                    print()
+                    new_lib = ""
+                    cancelled = False
+                    while not new_lib:
+                        new_lib = input(t("edit_config_path_prompt")).strip()
+                        if new_lib.lower() == 'q':
+                            cancelled = True
+                            break
+                        if not new_lib:
+                            print(t("onboard_invalid_path"))
+                    if cancelled:
+                        continue
+                    config.skills_lib = new_lib
+                    config_mgr.save_config()
+                    print(t("edit_config_saved"))
+                    time.sleep(1.5)
+                elif sub_choice == "2":
+                    clear_screen()
+                    print(t("edit_config_title"))
+                    print(t("edit_config_git_guide"))
+                    print()
+                    new_git = input(t("edit_config_git_prompt")).strip()
+                    if new_git.lower() == 'q':
+                        continue
+                    config.git_repo = new_git
+                    config_mgr.save_config()
+                    print(t("edit_config_saved"))
+                    time.sleep(1.5)
+                elif sub_choice == "3":
+                    clear_screen()
+                    print(t("edit_config_title"))
+                    print(t("edit_config_agents_guide"))
+                    print()
+                    cancelled = False
+                    while True:
+                        new_agents = input(t("edit_config_agents_prompt")).strip()
+                        if new_agents.lower() == 'q':
+                            cancelled = True
+                            break
+                        vals = [c for c in new_agents if c in ("0", "1")]
+                        if len(vals) == 3:
+                            config.agents = {
+                                "anti": int(vals[0]),
+                                "codex": int(vals[1]),
+                                "claude": int(vals[2])
+                            }
+                            break
+                        else:
+                            print(t("onboard_invalid_agents"))
+                    if cancelled:
+                        continue
+                    config_mgr.save_config()
+                    print(t("edit_config_saved"))
+                    time.sleep(1.5)
+                elif sub_choice == "4":
+                    clear_screen()
+                    print(t("edit_config_title"))
+                    print(t("edit_config_lang_prompt"))
+                    new_lang_choice = input(t("edit_config_choice")).strip()
+                    if new_lang_choice.lower() == 'q':
+                        continue
+                    if new_lang_choice == "2":
+                        config.lang = "vi"
+                    else:
+                        config.lang = "en"
+                    config_mgr.save_config()
+                    CURRENT_LANG = config.lang
+                    print(t("edit_config_saved"))
+                    time.sleep(1.5)
+                elif sub_choice == "5":
+                    break
+                else:
+                    print(t("invalid_choice"))
+                    time.sleep(1)
+        elif choice == "5":
+            clear_screen()
+            config_dir = config_mgr.config_dir
+            print(t("open_folder_start", str(config_dir)))
+            print()
+            try:
+                import platform
+                import subprocess
+                system = platform.system()
+                if system == "Darwin":
+                    subprocess.run(["open", str(config_dir)])
+                elif system == "Windows":
+                    os.startfile(str(config_dir))
+                else:
+                    # Linux or other unix
+                    subprocess.run(["xdg-open", str(config_dir)])
+                print(t("open_folder_ok"))
+            except Exception as e:
+                print(t("open_folder_err", str(e)))
+            time.sleep(2)
+        elif choice == "6":
             print(t("exit_msg"))
             import platform
             system = platform.system()

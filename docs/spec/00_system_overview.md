@@ -1,6 +1,6 @@
 # System Specification Overview: Skills Auto Sync Tool (`_spec0_system`)
 
-> **Version:** 2.2.0  
+> **Version:** 2.3.0  
 > **Last Updated:** 2026-08-06  
 > **Target Audience:** Lead Developer, Dev Agents, Test Agents, Product Owner  
 
@@ -16,7 +16,9 @@
    - Tệp `AGENTS.md` (chứa các chỉ thị/rules chung cho Agent).
    *Hoàn toàn không có thư mục trung gian như shared_rules/.*
 2. **Tự động chuyển đổi quy tắc (Rules Auto-Mapping):** Tệp `AGENTS.md` ở thư viện tổng được đồng bộ trực tiếp sang Antigravity và Codex làm `AGENTS.md` cùng cấp với folder `skills`. Nếu là Claude Code, Sync Engine sẽ **tự động sao chép và đổi tên thành CLAUDE.md** tại thư mục của Claude, đồng thời đính kèm thêm các header metadata đặc trưng của Claude. Logic này được xử lý hoàn toàn tự động ở mã nguồn Python.
-3. **Cấu hình cùng cấp (Same-Directory Config):** File cấu hình `config.json` nằm cùng thư mục với file thực thi thực tế để người dùng dễ dàng chỉnh sửa thủ công và tránh bị ghi đè chéo giữa các máy tính khác nhau khi sync qua Git.
+3. **Cấu hình hệ thống tập trung (Central System Config):** File cấu hình `config.json` không còn đặt cùng cấp với file thực thi để tránh bị ghi đè, mất cấu hình khi cập nhật phần mềm hoặc lỗi chữ ký số (App Signature) khi đóng gói Desktop App. File cấu hình sẽ luôn được lưu trữ tập trung tại:
+   - macOS: `~/Library/Application Support/Skills_Sync/config.json`
+   - Windows: `%APPDATA%\Skills_Sync\config.json`
 4. **Phân phối Agents linh hoạt:** Tự động phát hiện đường dẫn mặc định của các Agent trên hệ thống. Quét và đồng bộ chéo giữa thư viện tổng (`skills_lib`) và các Agent được bật (`anti`, `codex`, `claude`) với giá trị `1` trong config.
 
 ---

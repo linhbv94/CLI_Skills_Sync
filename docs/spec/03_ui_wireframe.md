@@ -1,123 +1,170 @@
 # CLI & Wireframe Specification: Skills Auto Sync Tool (`_spec3_ui_wireframe`)
 
-> **Version:** 2.2.0  
+> **Version:** 2.3.0  
 > **Last Updated:** 2026-08-06  
 > **Target Audience:** Developers, Dev Agents, QA Engineers  
 
 ---
 
-## 1. Giao diện Menu chính trên Terminal (Main CLI Menu Wireframe)
+## 1. Giao diện Cấu hình Ban đầu (Onboarding Wireframe)
 
-Khi người dùng khởi chạy ứng dụng (click chạy trực tiếp hoặc thông qua Lối tắt/Alias), giao diện CLI Terminal hiển thị trạng thái các Agent dựa trên giá trị cấu hình `0` hoặc `1` trong `config.json` cùng cấp:
+Khi khởi chạy ứng dụng lần đầu tiên (hoặc file `config.json` chưa tồn tại trong thư mục hệ thống AppData / Application Support):
 
+### A. Màn hình chọn Ngôn ngữ (Language Selection)
 ```text
 ======================================================================
-⚡ SKILLS AUTO SYNC TOOL (v2.2.0) - CLI INTERACTIVE MENU
+⚡ SKILLS AUTO SYNC TOOL - ONBOARDING SETUP
 ======================================================================
-[INFO] File cấu hình nạp từ: /Users/vic/2_Skills/config.json
+Please select your language / Vui lòng chọn ngôn ngữ hiển thị:
+
+  [1] English
+  [2] Tiếng Việt
+
+Your choice / Lựa chọn của bạn (1/2): 2_
+```
+
+### B. Màn hình chọn AI Agents (Agents Selection Setup)
+```text
+======================================================================
+⚡ SKILLS AUTO SYNC TOOL - CẤU HÌNH BAN ĐẦU (Tiếng Việt)
+======================================================================
+💡 Vui lòng thiết lập kích hoạt (1) hoặc vô hiệu hóa (0) cho các AI Agent.
+Thứ tự nhập tương ứng: Antigravity, Codex, Claude Code.
+Ví dụ: 1,1,0 để bật Antigravity & Codex, tắt Claude.
+
+Nhập cấu hình Agents (ví dụ: 1,1,0): 1,1,0_
+```
+
+### C. Màn hình nhập Thư viện tổng (Central Library Path)
+```text
+======================================================================
+⚡ SKILLS AUTO SYNC TOOL - CẤU HÌNH BAN ĐẦU (Tiếng Việt)
+======================================================================
+[INFO] File cấu hình đang được tạo tại: /path/to/Application Support/Skills_Sync/config.json
+
+💡 Vui lòng nhập đường dẫn tuyệt đối đến Thư viện tổng của bạn (skills_lib).
+Đây là thư mục trung tâm để đồng bộ kỹ năng và quy tắc.
+
+Nhập đường dẫn (ví dụ: /path/to/skills_lib): /path/to/skills_lib_
+```
+
+### D. Màn hình nhập Git Repository (Git Remote URL Setup)
+```text
+======================================================================
+⚡ SKILLS AUTO SYNC TOOL - CẤU HÌNH BAN ĐẦU (Tiếng Việt)
+======================================================================
+💡 Vui lòng dán link Git Remote Repository (HTTPS/SSH) để đồng bộ đám mây.
+(Nếu bạn muốn chạy chế độ Offline cục bộ không dùng Git, chỉ cần nhấn Enter để bỏ qua).
+
+Nhập link repo (Nhấn Enter để bỏ qua): https://github.com/dummy/skills_library_
+```
+
+---
+
+## 2. Giao diện Menu chính trên Terminal (Main CLI Menu Wireframe)
+
+Sau khi onboarding hoàn tất hoặc khi mở app những lần sau:
+
+### A. Phiên bản Tiếng Việt (`lang = vi`)
+```text
+======================================================================
+⚡ SKILLS AUTO SYNC TOOL (v2.3.0) - CLI INTERACTIVE MENU
+======================================================================
+[INFO] File cấu hình nạp từ: /path/to/Application Support/Skills_Sync/config.json
 
 [CONFIG SETTINGS]
-  └─ Thư viện tổng (skills_lib): /Users/vic/2_Skills
-  └─ Repository (git_repo):      https://github.com/linhbv94/Skills_Library
+  └─ Thư viện tổng (skills_lib): /path/to/skills_lib
+  └─ Repository (git_repo):      https://github.com/dummy/skills_library
 
 [ACTIVE AGENTS]
-  ├─ Antigravity: [ACTIVE]  ➔ /Users/vic/.gemini/config
-  ├─ Codex:       [ACTIVE]  ➔ /Users/vic/.codex
-  └─ Claude:      [DISABLED] ➔ /Users/vic/.claude
+  ├─ Antigravity: [ACTIVE]  ➔ /path/to/active_agents/.gemini/config
+  ├─ Codex:       [ACTIVE]  ➔ /path/to/active_agents/.codex
+  └─ Claude:      [DISABLED] ➔ /path/to/active_agents/.claude
 
+======================================================================
+[TRẠNG THÁI HỆ THỐNG: KHÔNG CÓ THAY ĐỔI (SYSTEM STATUS: NO CHANGES)]
+  ├─ Agent Antigravity: ➔ Đã đồng bộ mới nhất (Up-to-date).
+  ├─ Agent Codex:       ➔ Đã đồng bộ mới nhất (Up-to-date).
+  ├─ Agent Claude:      [DISABLED]
+  └─ Git Remote:        ➔ Đã đồng bộ mới nhất (Up-to-date).
 ======================================================================
 VUI LÒNG CHỌN CHỨC NĂNG (Nhập số tương ứng rồi nhấn Enter):
 
   [1] Đồng bộ ngay (Smart Sync Now)
-  [2] Giám sát chạy nền (Auto-Sync Watcher Daemon)
+  [2] Làm mới trạng thái (Refresh status)
   [3] Dọn dẹp môi trường (Clean up environment)
-  [4] Thoát ứng dụng
+  [4] Sửa cấu hình (Edit configuration)
+  [5] Mở thư mục cấu hình (Open config folder)
+  [6] Thoát ứng dụng
 
-Lựa chọn của bạn (1/2/3/4): _
+Lựa chọn của bạn (1/2/3/4/5/6): _
 ```
 
 ---
 
-## 2. Giao diện khi chọn Chức năng 1 (Smart Sync Now Output Wireframe)
+## 3. Giao diện Sửa cấu hình (Submenu: Edit configuration Wireframe)
 
-Sau khi nhập `1` và nhấn Enter, các Agent có trạng thái `[ACTIVE]` sẽ tham gia đồng bộ:
+Khi người dùng nhập `4` từ Menu chính:
 
+### Phiên bản Tiếng Việt
 ```text
->>> Bắt đầu tiến trình Smart Sync cục bộ & Git...
+======================================================================
+⚡ SKILLS AUTO SYNC TOOL - CHỈNH SỬA CẤU HÌNH (EDIT CONFIG)
+======================================================================
+Vui lòng lựa chọn thông số cần thay đổi:
 
-[1/3] Kiểm tra Git Repository...
-  ✓ Git Repo đã được liên kết chính xác.
-  Active Agents: antigravity, codex
+  [1] Sửa đường dẫn Thư viện tổng (skills_lib)
+  [2] Sửa link Git Remote Repository (git_repo)
+  [3] Sửa cấu hình kích hoạt AI Agents
+  [4] Sửa ngôn ngữ hiển thị (lang)
+  [5] Trở về Menu chính
 
-[2/3] Quét thay đổi Upstream từ Agent về Thư viện tổng...
-  ✓ Đã gom 1 file sửa đổi mới từ Agent về Library:
-    - antigravity: general_logic/SKILL.md
+Lựa chọn của bạn (1/2/3/4/5): 3_
+```
 
-[3/3] Đánh giá & Đồng bộ Git Remote...
-  ➔ Phát hiện có thay đổi local mới. Đang push lên Git Remote...
-  ➔ Đã push dữ liệu mới lên Git Remote thành công.
+#### Khi chọn 1 (Sửa Library Path) kèm hủy bỏ:
+```text
+💡 Vui lòng nhập đường dẫn tuyệt đối đến Thư viện tổng của bạn (skills_lib).
+(Nhập 'q' để hủy bỏ và quay lại mà không lưu).
 
->>> Triển khai Quy tắc & Phân bổ Skills cục bộ (Deploy downstream)...
-  ✓ Triển khai AGENTS.md/CLAUDE.md thành công tới các Agent.
-  ✓ Sao chép Skills thành công tới các Agent: antigravity, codex
+Nhập đường dẫn (ví dụ: /path/to/skills_lib): q_
+```
 
-🎉 === SMART SYNC HOÀN TẤT THÀNH CÔNG ===
+#### Khi chọn 2 (Sửa Git Repo) kèm hủy bỏ:
+```text
+💡 Nhập link Git Remote Repository mới của bạn.
+(Nhấn Enter để trống ➔ Đồng bộ cục bộ Offline, hoặc nhập 'q' để hủy bỏ).
 
-Nhấn Enter để quay lại Menu...
+Nhập link mới (Enter để xóa): q_
+```
+
+#### Khi chọn 3 (Sửa Agents) kèm hủy bỏ:
+```text
+💡 Thiết lập kích hoạt (1) hoặc vô hiệu hóa (0) cho các AI Agent (Antigravity, Codex, Claude Code).
+Ví dụ nhập: 1,1,0 (Nhập 'q' để hủy bỏ).
+
+Nhập cấu hình Agents mới (ví dụ: 1,1,0): q_
+```
+
+#### Khi chọn 4 (Sửa Language) kèm hủy bỏ:
+```text
+💡 Chọn ngôn ngữ hiển thị mới.
+(Nhập 'q' để hủy bỏ).
+
+Chọn ngôn ngữ hiển thị mới (1 cho en, 2 cho vi): q_
 ```
 
 ---
 
-## 3. Giao diện khi chọn Chức năng 2 (Auto-Sync Watcher Daemon Wireframe)
+## 4. Giao diện Mở thư mục cấu hình (Open config folder Wireframe)
 
-Khi chọn `2`, Watcher Daemon chỉ giám sát các thư mục của Agent đang kích hoạt (`ACTIVE`):
-
-```text
-======================================================================
-👁️ ĐANG KHỞI ĐỘNG CHẾ ĐỘ GIÁM SÁT CHẠY NỀN...
-======================================================================
-[INFO] Đang theo dõi các thay đổi file tại:
-  - /Users/vic/2_Skills (Thư viện tổng)
-  - /Users/vic/.gemini/config (Antigravity)
-  - /Users/vic/.codex (Codex)
-  * Chu kỳ quét: 3 giây/lần. Nhấn [Ctrl + C] để thoát chế độ giám sát.
-======================================================================
-[13:05:00] Giám sát đang chạy...
-[13:05:12] Phát hiện có thay đổi file:
-  ➔ File sửa đổi: /Users/vic/.codex/skills/python_dev/SKILL.md
->>> Bắt đầu tự động Smart Sync...
-  ...
-  ✓ Auto-Sync hoàn tất!
-[13:05:15] Giám sát đang chạy...
-```
-
----
-
-## 4. Giao diện khi chọn Chức năng 3 (Clean up environment Wireframe)
-
-Khi chọn `3`, màn hình hiển thị cảnh báo đỏ và yêu cầu xác nhận trước khi tiến hành dọn dẹp xóa sạch môi trường:
+Khi người dùng nhập `5` từ Menu chính, CLI chạy subprocess mở thư mục Finder / Explorer:
 
 ```text
-⚠️ CẢNH BÁO: Tiến trình này sẽ XÓA SẠCH:
-  1. Tất cả file và folder trong Thư viện tổng (skills_lib) ngoại trừ thư mục quản lý .git.
-  2. File AGENTS.md và toàn bộ nội dung thư mục skills/ của các Agent active (ngoại trừ .system của Codex).
-  Hành động này KHÔNG THỂ HOÀN TÁC.
+➔ Đang mở thư mục hệ thống chứa file config.json...
+  Đường dẫn: /path/to/Application Support/Skills_Sync
 
-Bạn có chắc chắn muốn dọn dẹp toàn bộ dữ liệu? (y/N): y
-
-[1/2] Đang dọn dẹp Thư viện tổng (skills_lib)...
-  ✓ Đã xóa: AGENTS.md
-  ✓ Đã xóa: skills
-
-[2/2] Đang dọn dẹp các Agent active...
-  ✓ Đã xóa rules của antigravity: AGENTS.md
-  ✓ Đã xóa folder skills của antigravity
-  ✓ Đã xóa rules của codex: AGENTS.md
-  ✓ Đã dọn dẹp skills của Codex (Đã giữ lại .system)
-
-🎉 DỌN DẸP MÔI TRƯỜNG THÀNH CÔNG!
-
-Nhấn Enter để quay lại Menu chính...
+✓ Đã mở thư mục thành công. Quay lại Menu chính sau 2 giây...
 ```
 
 ---
@@ -130,9 +177,11 @@ Khi trạng thái Git là `DIVERGED` (Cả Local và Remote đều có commit m�
 ⚠️ PHÁT HIỆN XUNG ĐỘT GIT REMOTE (Commits khác nhau trên Local & Remote)
 ======================================================================
 Vui lòng lựa chọn phương án xử lý xung đột:
+  [m] Tự động hợp nhất (Auto Merge & Pull - Khuyên dùng)
   [a] Lấy bản của Remote (Ghi đè Local bằng Remote Commits)
   [b] Đẩy đè bản Local lên (Ghi đè Remote bằng Local Commits)
-  [c] Hủy bỏ tiến trình Smart Sync (Không thay đổi gì)
+  [c] Bỏ qua lỗi đồng bộ mạng lần này, tiếp tục chạy Downstream cục bộ
+  [d] Quay lại (Hủy bỏ sync)
 ======================================================================
-Lựa chọn của bạn (a/b/c): _
+Lựa chọn của bạn (m/a/b/c/d): _
 ```
