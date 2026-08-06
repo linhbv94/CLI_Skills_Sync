@@ -97,7 +97,7 @@ class SyncEngine:
                 continue
 
             agent_dir = Path(agent_dir_str)
-            agent_skills_dir = agent_dir / "skills" if (agent_dir / "skills").exists() else agent_dir
+            agent_skills_dir = agent_dir / "skills"
             if not agent_skills_dir.exists():
                 continue
 
@@ -169,7 +169,7 @@ class SyncEngine:
                 continue
 
             agent_dir = Path(agent_dir_str)
-            target_skills_dir = agent_dir / "skills" if (agent_dir / "skills").exists() else agent_dir
+            target_skills_dir = agent_dir / "skills"
             target_skills_dir.mkdir(parents=True, exist_ok=True)
 
             for root, dirs, files in os.walk(library_skills_dir):

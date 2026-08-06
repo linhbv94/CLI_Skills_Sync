@@ -115,6 +115,39 @@ def run_one_time_sync(config_mgr, sync_engine, adapter_engine, git_engine):
             print(f"  ➔ Phát hiện Remote có {git_res.behind_count} commit mới. Đang pull...")
             ok, m = git_engine.execute_smart_sync(Path(config.skills_lib), "AUTO_PULL")
             print(f"  ➔ {m}")
+            if not ok:
+                print("\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                print("⚠️ LỖI: KHÔNG THỂ AUTO PULL FAST-FORWARD (Có thay đổi local chưa commit)")
+                print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+                print("Lịch sử cục bộ hoặc file rác (như .DS_Store) đang chặn việc pull tự động.")
+                print("Vui lòng lựa chọn phương án xử lý:")
+                print("  [m] Tự động hợp nhất (Auto Merge & Pull - Khuyên dùng)")
+                print("  [a] Chấp nhận bản trên Remote (Reset & Pull - git reset --hard)")
+                print("  [b] Chấp nhận bản cục bộ (Push Force - git push --force-with-lease)")
+                print("  [c] Bỏ qua lỗi đồng bộ mạng lần này, tiếp tục chạy Downstream cục bộ")
+                print("  [d] Quay lại (Hủy bỏ sync)")
+                
+                choice = input("\nLựa chọn của bạn (m/a/b/c/d): ").strip().lower()
+                if choice == "m":
+                    ok2, m2 = git_engine.execute_smart_sync(Path(config.skills_lib), "AUTO_MERGE")
+                    print(f"  ➔ {m2}")
+                    if not ok2:
+                        return False
+                elif choice == "a":
+                    ok2, m2 = git_engine.execute_smart_sync(Path(config.skills_lib), "FORCE_PULL")
+                    print(f"  ➔ {m2}")
+                    if not ok2:
+                        return False
+                elif choice == "b":
+                    ok2, m2 = git_engine.execute_smart_sync(Path(config.skills_lib), "FORCE_PUSH")
+                    print(f"  ➔ {m2}")
+                    if not ok2:
+                        return False
+                elif choice == "c":
+                    print("  ➔ Bỏ qua lỗi đồng bộ mạng, tiếp tục cục bộ.")
+                else:
+                    print("  ➔ Đã hủy bỏ tiến trình đồng bộ.")
+                    return False
 
         elif git_res.status == "AHEAD" or up_res.has_library_changes or rules_synced:
             print("  ➔ Phát hiện có thay đổi local mới. Đang push lên Git Remote...")
@@ -352,6 +385,95 @@ def run_cleanup_environment(config_mgr, git_engine):
 
     print("\n🎉 DỌN DẸP MÔI TRƯỜNG THÀNH CÔNG!")
 
+def print_detected_changes(config, config_mgr, sync_engine, git_engine):
+    """Quét nhanh và hiển thị trạng thái thay đổi mới tại Agent và Git Remote."""
+    print("[PHÁT HIỆN THAY ĐỔI MỚI (DETECTED CHANGES)]")
+    
+    defaults = config_mgr.get_default_agent_paths()
+    agent_paths = {
+        "antigravity": defaults["anti"],
+        "codex": defaults["codex"],
+        "claude": defaults["claude"]
+    }
+    selected_agents = []
+    if config.agents.get("anti") == 1:
+        selected_agents.append("antigravity")
+    if config.agents.get("codex") == 1:
+        selected_agents.append("codex")
+    if config.agents.get("claude") == 1:
+        selected_agents.append("claude")
+        
+    upstream_msg = {}
+    
+    # Quét rules (AGENTS.md/CLAUDE.md)
+    for agent_name in selected_agents:
+        agent_dir = Path(agent_paths[agent_name])
+        rule_changed = False
+        mtime_lib = 0.0
+        lib_rule = Path(config.skills_lib) / "AGENTS.md"
+        if lib_rule.exists():
+            mtime_lib = lib_rule.stat().st_mtime
+            
+        agent_rule_file = agent_dir / ("CLAUDE.md" if agent_name == "claude" else "AGENTS.md")
+        if agent_rule_file.exists():
+            if agent_rule_file.stat().st_mtime > mtime_lib:
+                rule_changed = True
+                
+        # Quét skills
+        try:
+            up_res = sync_engine.scan_and_sync_upstream(
+                Path(config.skills_lib),
+                agent_paths,
+                [agent_name],
+                config.ignore_patterns,
+                dry_run=True
+            )
+            count = len(up_res.files_synced_to_library)
+            msg_parts = []
+            if count > 0:
+                msg_parts.append(f"{count} skills mới/chỉnh sửa")
+            if rule_changed:
+                msg_parts.append("file rules mới")
+                
+            if msg_parts:
+                upstream_msg[agent_name] = f"➔ Phát hiện: {', '.join(msg_parts)}."
+            else:
+                upstream_msg[agent_name] = "➔ Đã đồng bộ mới nhất (Up-to-date)."
+        except Exception:
+            upstream_msg[agent_name] = "➔ Lỗi quét thư mục (Hãy kiểm tra cấu hình)."
+
+    for agent_name in ["anti", "codex", "claude"]:
+        full_name = "antigravity" if agent_name == "anti" else ("codex" if agent_name == "codex" else "claude")
+        if config.agents.get(agent_name) == 1:
+            print(f"  ├─ Agent {full_name.capitalize()}: {upstream_msg.get(full_name, '➔ Bỏ qua.')}")
+        else:
+            print(f"  ├─ Agent {full_name.capitalize()}: [DISABLED]")
+
+    # Quét Git Remote
+    if config.git_repo:
+        try:
+            git_res = git_engine.get_git_status(Path(config.skills_lib))
+            if git_res.status == "BEHIND":
+                print(f"  └─ Git Remote: ➔ Có {git_res.behind_count} commit mới trên Remote chưa kéo (Behind).")
+            elif git_res.status == "AHEAD":
+                print(f"  └─ Git Remote: ➔ Có {git_res.ahead_count} commit cục bộ mới chưa đẩy (Ahead).")
+            elif git_res.status == "DIVERGED":
+                print(f"  └─ Git Remote: ➔ Xung đột (Diverged) - Cả Local và Remote đều có commit mới.")
+            elif git_res.status == "OFFLINE":
+                print(f"  └─ Git Remote: ➔ Không có kết nối mạng (Offline Mode).")
+            elif git_res.status == "AUTH_ERROR":
+                print(f"  └─ Git Remote: ➔ Lỗi xác thực (Chưa cấu hình SSH Key / Token).")
+            elif git_res.status == "NOT_FOUND_ERROR":
+                print(f"  └─ Git Remote: ➔ Không tìm thấy Repository trên Remote (Sai link).")
+            elif git_res.status == "NO_GIT":
+                print(f"  └─ Git Remote: ➔ {git_res.error_message}")
+            else:
+                print(f"  └─ Git Remote: ➔ Đã đồng bộ mới nhất (Up-to-date).")
+        except Exception as e:
+            print(f"  └─ Git Remote: ➔ Lỗi kiểm tra Git: {str(e)}")
+    else:
+        print("  └─ Git Remote: [DISABLED] (Git Remote chưa cấu hình)")
+
 def main():
     parser = argparse.ArgumentParser(description="Skills Auto Sync Tool CLI")
     parser.add_argument("--cli", action="store_true", help="Chạy chế độ dòng lệnh (Mặc định)")
@@ -402,6 +524,11 @@ def main():
         print(f"  ├─ Codex:       {codex_status}  ➔ {defaults['codex']}")
         print(f"  └─ Claude:      {claude_status}  ➔ {defaults['claude']}")
         print("======================================================================")
+        
+        # Hiển thị phát hiện thay đổi mới
+        print_detected_changes(config, config_mgr, sync_engine, git_engine)
+        print("======================================================================")
+        
         print("VUI LÒNG CHỌN CHỨC NĂNG (Nhập số tương ứng rồi nhấn Enter):")
         print("  [1] Đồng bộ ngay (Smart Sync Now)")
         print("  [2] Giám sát chạy nền (Auto-Sync Watcher Daemon)")

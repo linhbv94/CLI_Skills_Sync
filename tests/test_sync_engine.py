@@ -24,7 +24,7 @@ class SyncEngineTests(unittest.TestCase):
         os.utime(path, (mtime, mtime))
 
     def test_preview_reports_changes_without_writing(self):
-        agent_file = self.agent_a / "demo_skill" / "SKILL.md"
+        agent_file = self.agent_a / "skills" / "demo_skill" / "SKILL.md"
         self._write(agent_file, "agent version", 200)
 
         result = self.engine.scan_and_sync_upstream(
@@ -45,8 +45,8 @@ class SyncEngineTests(unittest.TestCase):
     def test_newest_agent_version_wins_regardless_of_agent_order(self):
         relative_path = Path("demo_skill") / "SKILL.md"
         self._write(self.library / "skills" / relative_path, "library", 100)
-        self._write(self.agent_a / relative_path, "older agent", 200)
-        self._write(self.agent_b / relative_path, "newest agent", 300)
+        self._write(self.agent_a / "skills" / relative_path, "older agent", 200)
+        self._write(self.agent_b / "skills" / relative_path, "newest agent", 300)
 
         result = self.engine.scan_and_sync_upstream(
             self.library,
@@ -68,7 +68,7 @@ class SyncEngineTests(unittest.TestCase):
         )
 
     def test_system_directory_is_always_ignored(self):
-        system_file = self.agent_a / ".system" / "internal" / "SKILL.md"
+        system_file = self.agent_a / "skills" / ".system" / "internal" / "SKILL.md"
         self._write(system_file, "secret", 200)
 
         result = self.engine.scan_and_sync_upstream(
