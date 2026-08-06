@@ -184,110 +184,7 @@ def run_one_time_sync(config_mgr, sync_engine, adapter_engine, git_engine):
     print("\n🎉 === SMART SYNC HOÀN TẤT THÀNH CÔNG ===")
     return True
 
-def get_monitored_state(config, selected_agents, agent_paths) -> dict:
-    """Quét và lấy trạng thái file hiện tại (dung lượng & time sửa đổi) để phục vụ watcher."""
-    state = {}
-    
-    # 1. Quét skills_lib/skills
-    skills_lib_path = Path(config.skills_lib) / "skills"
-    if skills_lib_path.exists():
-        for root, dirs, files in os.walk(skills_lib_path):
-            for file in files:
-                file_path = Path(root) / file
-                try:
-                    rel_path = file_path.relative_to(skills_lib_path)
-                    if not SyncEngine.is_ignored(str(rel_path), config.ignore_patterns):
-                        stat = file_path.stat()
-                        state[f"lib:{rel_path.as_posix()}"] = (stat.st_size, stat.st_mtime)
-                except Exception:
-                    pass
 
-    # 2. Quét các Agent active
-    for agent_name in selected_agents:
-        agent_dir_str = agent_paths.get(agent_name, "")
-        if not agent_dir_str:
-            continue
-        agent_dir = Path(agent_dir_str)
-        agent_skills_dir = agent_dir / "skills" if (agent_dir / "skills").exists() or agent_name == "claude" else agent_dir
-        
-        if agent_skills_dir.exists():
-            for root, dirs, files in os.walk(agent_skills_dir):
-                if ".system" in dirs:
-                    dirs.remove(".system") # Loại bỏ folder hệ thống Codex
-                for file in files:
-                    file_path = Path(root) / file
-                    try:
-                        rel_path = file_path.relative_to(agent_skills_dir)
-                        if not SyncEngine.is_ignored(str(rel_path), config.ignore_patterns):
-                            stat = file_path.stat()
-                            state[f"{agent_name}:{rel_path.as_posix()}"] = (stat.st_size, stat.st_mtime)
-                    except Exception:
-                        pass
-    return state
-
-def run_watcher_daemon(config_mgr, sync_engine, adapter_engine, git_engine):
-    """Giám sát liên tục các thư mục (Polling mỗi 3s) và đồng bộ tự động."""
-    config = config_mgr.config
-    defaults = config_mgr.get_default_agent_paths()
-    agent_paths = {
-        "antigravity": defaults["anti"],
-        "codex": defaults["codex"],
-        "claude": defaults["claude"]
-    }
-
-    selected_agents = []
-    if config.agents.get("anti") == 1:
-        selected_agents.append("antigravity")
-    if config.agents.get("codex") == 1:
-        selected_agents.append("codex")
-    if config.agents.get("claude") == 1:
-        selected_agents.append("claude")
-
-    clear_screen()
-    print("======================================================================")
-    print("👁️ ĐANG KHỞI ĐỘNG CHẾ ĐỘ GIÁM SÁT CHẠY NỀN...")
-    print("======================================================================")
-    print("[INFO] Đang theo dõi các thay đổi file tại:")
-    print(f"  - Thư viện tổng (skills_lib): {config.skills_lib}")
-    for agent in selected_agents:
-        print(f"  - Agent {agent}: {agent_paths[agent]}")
-    print("\n[INFO] Hệ thống sẽ tự động đồng bộ khi phát hiện sự kiện thay đổi file.")
-    print("[INFO] Nhấn [Ctrl + C] để dừng giám sát và quay lại Menu chính.")
-    print("----------------------------------------------------------------------")
-
-    # Lấy trạng thái ban đầu
-    last_state = get_monitored_state(config, selected_agents, agent_paths)
-    print(f"[{time.strftime('%H:%M:%S')}] Watcher Daemon đang chạy...")
-
-    try:
-        while True:
-            time.sleep(3)
-            current_state = get_monitored_state(config, selected_agents, agent_paths)
-            
-            # So sánh sự khác biệt
-            if current_state != last_state:
-                print(f"\n[{time.strftime('%H:%M:%S')}] [EVENT] Phát hiện thay đổi file hệ thống!")
-                
-                # Tìm xem thay đổi từ đâu
-                for key in current_state:
-                    if key not in last_state:
-                        print(f"  ➔ File mới thêm: {key}")
-                    elif current_state[key] != last_state[key]:
-                        print(f"  ➔ File sửa đổi: {key}")
-                for key in last_state:
-                    if key not in current_state:
-                        print(f"  ➔ File bị xóa: {key}")
-
-                # Kích hoạt Smart Sync
-                run_one_time_sync(config_mgr, sync_engine, adapter_engine, git_engine)
-                print("----------------------------------------------------------------------")
-                print(f"[{time.strftime('%H:%M:%S')}] Giám sát đang chạy...")
-                
-                # Cập nhật state mới nhất
-                last_state = get_monitored_state(config, selected_agents, agent_paths)
-    except KeyboardInterrupt:
-        print("\n\n[INFO] Đã dừng giám sát Daemon. Trở lại Menu chính...")
-        time.sleep(1)
 
 def run_cleanup_environment(config_mgr, git_engine):
     """Xóa sạch tệp cấu hình quy tắc và nội dung kỹ năng ở thư viện tổng và các agent."""
@@ -389,8 +286,6 @@ def run_cleanup_environment(config_mgr, git_engine):
 
 def print_detected_changes(config, config_mgr, sync_engine, git_engine):
     """Quét nhanh và hiển thị trạng thái thay đổi mới tại Agent và Git Remote."""
-    print("[PHÁT HIỆN THAY ĐỔI MỚI (DETECTED CHANGES)]")
-    
     defaults = config_mgr.get_default_agent_paths()
     agent_paths = {
         "antigravity": defaults["anti"],
@@ -406,6 +301,7 @@ def print_detected_changes(config, config_mgr, sync_engine, git_engine):
         selected_agents.append("claude")
         
     upstream_msg = {}
+    has_changes = False
     
     # Quét rules (AGENTS.md/CLAUDE.md)
     for agent_name in selected_agents:
@@ -434,8 +330,10 @@ def print_detected_changes(config, config_mgr, sync_engine, git_engine):
             msg_parts = []
             if count > 0:
                 msg_parts.append(f"{count} skills mới/chỉnh sửa")
+                has_changes = True
             if rule_changed:
                 msg_parts.append("file rules mới")
+                has_changes = True
                 
             if msg_parts:
                 upstream_msg[agent_name] = f"➔ Phát hiện: {', '.join(msg_parts)}."
@@ -444,37 +342,48 @@ def print_detected_changes(config, config_mgr, sync_engine, git_engine):
         except Exception:
             upstream_msg[agent_name] = "➔ Lỗi quét thư mục (Hãy kiểm tra cấu hình)."
 
+    git_msg = ""
+    # Quét Git Remote
+    if config.git_repo:
+        try:
+            git_res = git_engine.get_git_status(Path(config.skills_lib))
+            if git_res.status == "BEHIND":
+                git_msg = f"➔ Có {git_res.behind_count} commit mới trên Remote chưa kéo (Behind)."
+                has_changes = True
+            elif git_res.status == "AHEAD":
+                git_msg = f"➔ Có {git_res.ahead_count} commit cục bộ mới chưa đẩy (Ahead)."
+                has_changes = True
+            elif git_res.status == "DIVERGED":
+                git_msg = "➔ Xung đột (Diverged) - Cả Local và Remote đều có commit mới."
+                has_changes = True
+            elif git_res.status == "OFFLINE":
+                git_msg = "➔ Không có kết nối mạng (Offline Mode)."
+            elif git_res.status == "AUTH_ERROR":
+                git_msg = "➔ Lỗi xác thực (Chưa cấu hình SSH Key / Token)."
+            elif git_res.status == "NOT_FOUND_ERROR":
+                git_msg = "➔ Không tìm thấy Repository trên Remote (Sai link)."
+            elif git_res.status == "NO_GIT":
+                git_msg = f"➔ {git_res.error_message}"
+            else:
+                git_msg = "➔ Đã đồng bộ mới nhất (Up-to-date)."
+        except Exception as e:
+            git_msg = f"➔ Lỗi kiểm tra Git: {str(e)}"
+    else:
+        git_msg = "[DISABLED] (Git Remote chưa cấu hình)"
+
+    if has_changes:
+        print("[PHÁT HIỆN THAY ĐỔI MỚI (DETECTED CHANGES)]")
+    else:
+        print("[TRẠNG THÁI HỆ THỐNG: KHÔNG CÓ THAY ĐỔI (SYSTEM STATUS: NO CHANGES)]")
+
     for agent_name in ["anti", "codex", "claude"]:
         full_name = "antigravity" if agent_name == "anti" else ("codex" if agent_name == "codex" else "claude")
         if config.agents.get(agent_name) == 1:
             print(f"  ├─ Agent {full_name.capitalize()}: {upstream_msg.get(full_name, '➔ Bỏ qua.')}")
         else:
             print(f"  ├─ Agent {full_name.capitalize()}: [DISABLED]")
-
-    # Quét Git Remote
-    if config.git_repo:
-        try:
-            git_res = git_engine.get_git_status(Path(config.skills_lib))
-            if git_res.status == "BEHIND":
-                print(f"  └─ Git Remote: ➔ Có {git_res.behind_count} commit mới trên Remote chưa kéo (Behind).")
-            elif git_res.status == "AHEAD":
-                print(f"  └─ Git Remote: ➔ Có {git_res.ahead_count} commit cục bộ mới chưa đẩy (Ahead).")
-            elif git_res.status == "DIVERGED":
-                print(f"  └─ Git Remote: ➔ Xung đột (Diverged) - Cả Local và Remote đều có commit mới.")
-            elif git_res.status == "OFFLINE":
-                print(f"  └─ Git Remote: ➔ Không có kết nối mạng (Offline Mode).")
-            elif git_res.status == "AUTH_ERROR":
-                print(f"  └─ Git Remote: ➔ Lỗi xác thực (Chưa cấu hình SSH Key / Token).")
-            elif git_res.status == "NOT_FOUND_ERROR":
-                print(f"  └─ Git Remote: ➔ Không tìm thấy Repository trên Remote (Sai link).")
-            elif git_res.status == "NO_GIT":
-                print(f"  └─ Git Remote: ➔ {git_res.error_message}")
-            else:
-                print(f"  └─ Git Remote: ➔ Đã đồng bộ mới nhất (Up-to-date).")
-        except Exception as e:
-            print(f"  └─ Git Remote: ➔ Lỗi kiểm tra Git: {str(e)}")
-    else:
-        print("  └─ Git Remote: [DISABLED] (Git Remote chưa cấu hình)")
+            
+    print(f"  └─ Git Remote:  {git_msg}")
 
 def main():
     parser = argparse.ArgumentParser(description="Skills Auto Sync Tool CLI")
@@ -533,7 +442,7 @@ def main():
         
         print("VUI LÒNG CHỌN CHỨC NĂNG (Nhập số tương ứng rồi nhấn Enter):")
         print("  [1] Đồng bộ ngay (Smart Sync Now)")
-        print("  [2] Giám sát chạy nền (Auto-Sync Watcher Daemon)")
+        print("  [2] Làm mới trạng thái (Refresh status)")
         print("  [3] Dọn dẹp môi trường (Clean up environment)")
         print("  [4] Thoát ứng dụng")
         print("======================================================================")
@@ -543,7 +452,8 @@ def main():
             run_one_time_sync(config_mgr, sync_engine, adapter_engine, git_engine)
             input("\nNhấn Enter để quay lại Menu...")
         elif choice == "2":
-            run_watcher_daemon(config_mgr, sync_engine, adapter_engine, git_engine)
+            # Làm mới trạng thái: chỉ cần loop tiếp để hiển thị lại thông tin mới nhất
+            continue
         elif choice == "3":
             run_cleanup_environment(config_mgr, git_engine)
             input("\nNhấn Enter để quay lại Menu...")
