@@ -320,11 +320,13 @@ def run_cleanup_environment(config_mgr, git_engine):
             
             # Đồng bộ thay đổi này lên Git Remote!
             print("  ➔ Đang đồng bộ và đẩy thay đổi dọn dẹp lên Git Remote...")
-            ok, m = git_engine.execute_smart_sync(lib_path, "AUTO_PUSH")
-            if ok:
+            git_engine.run_cmd(["add", "-A"], cwd=lib_path)
+            git_engine.run_cmd(["commit", "-m", "Clean up environment: remove all rules and skills"], cwd=lib_path)
+            code, out, err = git_engine.run_cmd(["push", "--force", "origin", "main"], cwd=lib_path)
+            if code == 0:
                 print("  ✓ Đã cập nhật và xóa sạch kho lưu trữ trên Git Remote.")
             else:
-                print(f"  ⚠️ Cảnh báo Git: {m}")
+                print(f"  ⚠️ Cảnh báo Git: Không thể force push lên Remote: {err}")
         else:
             print("  ⚠️ Thư mục skills_lib không tồn tại.")
     else:
