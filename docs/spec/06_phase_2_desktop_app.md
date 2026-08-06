@@ -79,10 +79,10 @@ window.pywebview.api.run_cleanup().then(...);
 
 Khi đóng gói, chúng ta sẽ định cấu hình PyInstaller để xuất ra 2 phiên bản độc lập từ cùng một source code:
 
-### 1. Bản CLI (skills_sync / skills_sync.exe)
+### 1. Bản CLI (skill_auto_sync / skill_auto_sync.exe)
 * **Lệnh build:**
   ```bash
-  pyinstaller --onefile --name=skills_sync --icon=assets/app_icon.icns main.py
+  pyinstaller --onefile --name=skill_auto_sync --icon=assets/app_icon.icns main.py
   ```
 * **Đặc tính:** Chạy trực tiếp trong terminal, không mở cửa sổ đồ họa.
 

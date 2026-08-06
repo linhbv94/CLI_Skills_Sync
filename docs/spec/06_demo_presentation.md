@@ -16,7 +16,7 @@ Kịch bản demo 3 phút chứng minh khả năng chạy đồng bộ nhanh th�
 ```
 
 ### Phân đoạn 1 (0:00 - 1:00): Bối cảnh & Khởi động Ứng dụng
-1. Mở thư mục chứa file thực thi trên **MacBook**. Click đúp file nhị phân `skills_sync` (Unix Executable hoặc Alias ngoài Desktop).
+1. Mở thư mục chứa file thực thi trên **MacBook**. Click đúp file nhị phân `skill_auto_sync` (Unix Executable hoặc Alias ngoài Desktop).
 2. Hệ thống tự động mở Terminal, nạp cấu hình `config.json` cùng cấp và hiển thị menu lựa chọn:
    - Các thông số `skills_lib` và `git_repo` được hiển thị rõ ràng.
    - Trạng thái các Agent được hiển thị: `Antigravity: [ACTIVE]`, `Codex: [ACTIVE]`, `Claude: [PAUSED]`.
@@ -33,7 +33,7 @@ Kịch bản demo 3 phút chứng minh khả năng chạy đồng bộ nhanh th�
 4. Người dùng mở Codex kiểm tra ➔ Skill đã tự động đồng bộ tức thì.
 
 ### Phân đoạn 3 (2:00 - 3:00): Đồng bộ về máy thứ hai (Windows)
-1. Di chuyển sang máy **Windows**. Click đúp lối tắt Shortcut `skills_sync` ngoài Desktop.
+1. Di chuyển sang máy **Windows**. Click đúp lối tắt Shortcut `skill_auto_sync` ngoài Desktop.
 2. Giao diện CMD hiện lên. Người dùng nhập `1` ➔ Enter.
 3. Engine thực hiện git fetch ➔ Phát hiện remote có commit mới (Behind) ➔ Tự động chạy `git pull --ff-only` ➔ Đồng bộ bản mới nhất xuống các thư mục active agent của máy Windows (`anti` và `codex`).
 4. Đóng demo ➔ Hoàn tất quy trình đồng bộ nhanh gọn, không cần cấu hình UI phức tạp.

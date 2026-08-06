@@ -12,9 +12,9 @@
 │   ├── app_icon.icns           # Icon định dạng macOS
 │   └── app_icon.ico            # Icon định dạng Windows
 ├── dist/                       # Chứa file thực thi sau khi build
-│   ├── skills_sync             # File thực thi cho macOS (độc lập)
+│   ├── skill_auto_sync         # File thực thi cho macOS (độc lập)
 │   ├── config.json             # File config chạy thật/test
-│   └── skills_sync.command     # File phím tắt chạy nhanh trên macOS
+│   └── skill_auto_sync.command # File phím tắt chạy nhanh trên macOS
 ├── docs/spec/                  # Tài liệu đặc tả hệ thống
 ├── src/                        # Mã nguồn Python
 │   ├── config_manager.py       # Quản lý nạp/ghi config.json
@@ -30,7 +30,7 @@
 
 ## 2. Hướng dẫn Cấu hình `config.json`
 
-File `config.json` bắt buộc phải đặt ở **cùng thư mục với file thực thi** (`skills_sync` hoặc `skills_sync.exe`). Nếu chưa có file này, khi mở ứng dụng lần đầu tiên, tool sẽ tự động sinh file mẫu.
+File `config.json` bắt buộc phải đặt ở **cùng thư mục với file thực thi** (`skill_auto_sync` hoặc `skill_auto_sync.exe`). Nếu chưa có file này, khi mở ứng dụng lần đầu tiên, tool sẽ tự động sinh file mẫu.
 
 ### Cấu trúc file mẫu:
 ```json
@@ -94,16 +94,16 @@ pip install pyinstaller
 #### 🍏 Trên macOS (Build ra file Unix Executable):
 Mở Terminal tại thư mục gốc của dự án và chạy:
 ```bash
-pyinstaller --onefile --name skills_sync --icon=assets/app_icon.icns main.py
+pyinstaller --onefile --name skill_auto_sync --icon=assets/app_icon.icns main.py
 ```
-* Thành phẩm nằm ở: `dist/skills_sync`
+* Thành phẩm nằm ở: `dist/skill_auto_sync`
 
 #### 🪟 Trên Windows (Build ra file .exe):
 Mở CMD/PowerShell tại thư mục gốc của dự án và chạy:
 ```cmd
-pyinstaller --onefile --name skills_sync --icon=assets/app_icon.ico main.py
+pyinstaller --onefile --name skill_auto_sync --icon=assets/app_icon.ico main.py
 ```
-* Thành phẩm nằm ở: `dist/skills_sync.exe`
+* Thành phẩm nằm ở: `dist/skill_auto_sync.exe`
 
 ---
 
@@ -121,8 +121,8 @@ Khi chạy ứng dụng dòng lệnh, bạn sẽ tương tác thông qua menu ph
 * **[4] Thoát ứng dụng.**
 
 ### Cơ chế Lối tắt (Shortcuts) 1-Click:
-* **Trên Windows:** Tạo một **Windows Shortcut** trỏ tới file `skills_sync.exe`. Chuột phải vào Shortcut ➔ Chọn Properties ➔ Config phần *Start in* là đường dẫn thư mục chứa `.exe` (để file đọc được `config.json` cùng cấp). Kéo Shortcut ra Desktop hoặc Ghim vào Taskbar để click chạy nhanh.
-* **Trên macOS:** Nhấp đúp vào file [dist/skills_sync.command](file:///Users/vic/_Work/Skills_Sync/dist/skills_sync.command) ngoài màn hình Desktop/Finder. File script này sẽ tự động CD về đúng thư mục chứa tệp nhị phân và chạy tool dòng lệnh ngay lập tức.
+* **Trên Windows:** Tạo một **Windows Shortcut** trỏ tới file `skill_auto_sync.exe`. Chuột phải vào Shortcut ➔ Chọn Properties ➔ Config phần *Start in* là đường dẫn thư mục chứa `.exe` (để file đọc được `config.json` cùng cấp). Kéo Shortcut ra Desktop hoặc Ghim vào Taskbar để click chạy nhanh.
+* **Trên macOS:** Nhấp đúp vào file [dist/skill_auto_sync.command](file:///Users/vic/_Work/Skills_Sync/dist/skill_auto_sync.command) ngoài màn hình Desktop/Finder. File script này sẽ tự động CD về đúng thư mục chứa tệp nhị phân và chạy tool dòng lệnh ngay lập tức.
 
 ---
 

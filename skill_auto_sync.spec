@@ -22,7 +22,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='skills_sync',
+    name='skill_auto_sync',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

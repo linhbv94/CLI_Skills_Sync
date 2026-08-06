@@ -73,7 +73,7 @@ Tất cả các tài liệu đặc tả liên kết bằng đường dẫn tươ
 | Hệ điều hành | Định dạng File | Cơ chế Phím tắt 1-Click |
 | :--- | :--- | :--- |
 | **Windows** | `.exe` (PE Binary) | Tạo **Windows Shortcut** trỏ đến file `.exe` thật. Ghim shortcut này ra Desktop hoặc Taskbar. Thư mục làm việc (Start in) vẫn giữ nguyên là folder chứa `.exe` và `config.json`. |
-| **macOS** | **Unix Executable** (Không đuôi) | **1. macOS Alias:** Tạo Alias cho file `skills_sync` và kéo ra Desktop/Dock.<br>**2. Automator App:** Tạo App Automator chứa lệnh `cd /folder_chua_tool && ./skills_sync` ghim vào Dock.<br>**3. Command Script:** Click đúp file `.command` ngoài Desktop. |
+| **macOS** | **Unix Executable** (Không đuôi) | **1. macOS Alias:** Tạo Alias cho file `skill_auto_sync` và kéo ra Desktop/Dock.<br>**2. Automator App:** Tạo App Automator chứa lệnh `cd /folder_chua_tool && ./skill_auto_sync` ghim vào Dock.<br>**3. Command Script:** Click đúp file `.command` ngoài Desktop. |
 
 ---
 
