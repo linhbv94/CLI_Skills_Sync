@@ -472,9 +472,19 @@ def main():
         elif choice == "4":
             print("\nCảm ơn bạn đã sử dụng công cụ! Tạm biệt.")
             import platform
-            if platform.system() == "Darwin":
+            system = platform.system()
+            if system == "Darwin":
                 import subprocess
                 subprocess.Popen(["osascript", "-e", 'tell application "Terminal" to close front window'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            elif system == "Windows":
+                try:
+                    import ctypes
+                    hwnd = ctypes.windll.kernel32.GetConsoleWindow()
+                    if hwnd != 0:
+                        # Gửi message WM_CLOSE (0x0010) để tắt cửa sổ console
+                        ctypes.windll.user32.PostMessageW(hwnd, 0x0010, 0, 0)
+                except Exception:
+                    pass
             sys.exit(0)
         else:
             print("\n❌ Lựa chọn không hợp lệ. Vui lòng nhập số từ 1 đến 4.")
