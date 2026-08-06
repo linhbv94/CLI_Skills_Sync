@@ -61,6 +61,31 @@ class SyncEngine:
         library_skills_dir = library_path / "skills"
         if not dry_run:
             library_skills_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Tự động tạo .gitignore nếu chưa có để chặn file rác OS
+            gitignore_file = library_path / ".gitignore"
+            if not gitignore_file.exists():
+                try:
+                    content = (
+                        "# macOS junk files\n"
+                        ".DS_Store\n"
+                        ".AppleDouble\n"
+                        "._*\n"
+                        ".Spotlight-V100\n"
+                        ".Trashes\n\n"
+                        "# Windows junk files\n"
+                        "Thumbs.db\n"
+                        "ehthumbs.db\n"
+                        "desktop.ini\n"
+                        "~$*\n\n"
+                        "# Temp/Backup files\n"
+                        "*.tmp\n"
+                        "*.bak*\n"
+                    )
+                    with open(gitignore_file, "w", encoding="utf-8") as f:
+                        f.write(content)
+                except Exception:
+                    pass
 
         synced_files = []
         agents_affected = set()
@@ -72,8 +97,7 @@ class SyncEngine:
                 continue
 
             agent_dir = Path(agent_dir_str)
-            # Đối với Claude Code, nếu path là root ~/.claude thì subfolder skills là ~/.claude/skills
-            agent_skills_dir = agent_dir / "skills" if (agent_dir / "skills").exists() or agent_name == "claude" else agent_dir
+            agent_skills_dir = agent_dir / "skills" if (agent_dir / "skills").exists() else agent_dir
             if not agent_skills_dir.exists():
                 continue
 
@@ -145,7 +169,7 @@ class SyncEngine:
                 continue
 
             agent_dir = Path(agent_dir_str)
-            target_skills_dir = agent_dir / "skills" if (agent_dir / "skills").exists() or agent_name == "claude" else agent_dir
+            target_skills_dir = agent_dir / "skills" if (agent_dir / "skills").exists() else agent_dir
             target_skills_dir.mkdir(parents=True, exist_ok=True)
 
             for root, dirs, files in os.walk(library_skills_dir):

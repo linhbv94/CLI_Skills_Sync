@@ -33,10 +33,10 @@ class AdapterEngine:
         files = []
 
         if agent_name in ["antigravity", "codex"]:
-            # Check cả ở agent_dir và parent nếu agent_dir là subfolder skills
-            files.append(agent_dir / "AGENTS.md")
             if agent_dir.name == "skills":
                 files.append(agent_dir.parent / "AGENTS.md")
+            else:
+                files.append(agent_dir / "AGENTS.md")
         elif agent_name == "claude":
             files.append(agent_dir / "CLAUDE.md")
 
@@ -51,17 +51,12 @@ class AdapterEngine:
     ) -> Tuple[bool, str]:
         """
         [Upstream Rules Sync]: Phát hiện nếu AGENTS.md hoặc CLAUDE.md ở bất kỳ Agent nào mới hơn
-        bản trong Central Library (shared_rules/agents.md hoặc AGENTS.md), tự động gom về Library.
+        bản trong Central Library (AGENTS.md), tự động gom về Library.
         """
-        shared_rules_dir = library_path / "shared_rules"
-        lib_rules_file = shared_rules_dir / "agents.md"
         lib_root_file = library_path / "AGENTS.md"
 
-        lib_mtime = max(
-            lib_rules_file.stat().st_mtime if lib_rules_file.exists() else 0,
-            lib_root_file.stat().st_mtime if lib_root_file.exists() else 0
-        )
-        lib_hash = self.get_file_hash(lib_rules_file) or self.get_file_hash(lib_root_file)
+        lib_mtime = lib_root_file.stat().st_mtime if lib_root_file.exists() else 0
+        lib_hash = self.get_file_hash(lib_root_file)
 
         newer_agent_rules = None
         source_info = ""
@@ -83,7 +78,6 @@ class AdapterEngine:
             if dry_run:
                 return True, f"Sẽ gom rules sửa đổi từ {source_info} về Central Library."
             try:
-                shared_rules_dir.mkdir(parents=True, exist_ok=True)
                 with open(newer_agent_rules, "r", encoding="utf-8") as f:
                     content = f.read()
 
@@ -91,8 +85,6 @@ class AdapterEngine:
                 if newer_agent_rules.name == "CLAUDE.md" and CLAUDE_HEADER_METADATA.strip() in content:
                     content = content.replace(CLAUDE_HEADER_METADATA, "").strip()
 
-                with open(lib_rules_file, "w", encoding="utf-8") as f:
-                    f.write(content)
                 with open(lib_root_file, "w", encoding="utf-8") as f:
                     f.write(content)
 
@@ -113,15 +105,10 @@ class AdapterEngine:
         self.sync_rules_upstream(library_path, agent_paths, selected_agents)
 
         # 2. Tìm nguồn rules file chuẩn trong Library
-        shared_rules_dir = library_path / "shared_rules"
-        source_agents_md = shared_rules_dir / "agents.md"
+        source_agents_md = library_path / "AGENTS.md"
 
         if not source_agents_md.exists():
-            root_agents_md = library_path / "AGENTS.md"
-            if root_agents_md.exists():
-                source_agents_md = root_agents_md
-            else:
-                return []
+            return []
 
         try:
             with open(source_agents_md, "r", encoding="utf-8") as f:
@@ -141,18 +128,18 @@ class AdapterEngine:
             agent_dir.mkdir(parents=True, exist_ok=True)
 
             if agent_name in ["antigravity", "codex"]:
-                targets = [agent_dir / "AGENTS.md"]
                 if agent_dir.name == "skills":
-                    targets.append(agent_dir.parent / "AGENTS.md")
+                    target_file = agent_dir.parent / "AGENTS.md"
+                else:
+                    target_file = agent_dir / "AGENTS.md"
 
-                for t in targets:
-                    try:
-                        t.parent.mkdir(parents=True, exist_ok=True)
-                        with open(t, "w", encoding="utf-8") as f:
-                            f.write(rules_content)
-                        deployed_list.append(f"{agent_name} -> {t.name}")
-                    except Exception as e:
-                        print(f"[AdapterEngine] Lỗi deploy AGENTS.md: {e}")
+                try:
+                    target_file.parent.mkdir(parents=True, exist_ok=True)
+                    with open(target_file, "w", encoding="utf-8") as f:
+                        f.write(rules_content)
+                    deployed_list.append(f"{agent_name} -> {target_file.name}")
+                except Exception as e:
+                    print(f"[AdapterEngine] Lỗi deploy AGENTS.md: {e}")
 
             elif agent_name == "claude":
                 target_claude_file = agent_dir / "CLAUDE.md"

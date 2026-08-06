@@ -16,24 +16,24 @@ DEFAULT_IGNORE_PATTERNS = [
 
 @dataclass
 class AppConfig:
-    version: str = "1.2.0"
-    library_path: str = ""
-    git_remote_url: str = ""
-    selected_agents: List[str] = field(default_factory=lambda: ["antigravity", "codex", "claude"])
-    agent_paths: Dict[str, str] = field(default_factory=dict)
+    version: str = "2.1.0"
+    agents: Dict[str, int] = field(default_factory=lambda: {"anti": 1, "codex": 1, "claude": 0})
+    skills_lib: str = ""
+    git_repo: str = ""
     ignore_patterns: List[str] = field(default_factory=lambda: list(DEFAULT_IGNORE_PATTERNS))
-    git_settings: Dict[str, bool] = field(default_factory=lambda: {"auto_fetch": True, "auto_push": True})
 
 class ConfigManager:
-    """Quản lý nạp, ghi cấu hình config.json và tự động dò đường dẫn Agent theo HĐH."""
+    """Quản lý nạp, ghi cấu hình config.json cùng cấp với file thực thi/script."""
 
     def __init__(self, config_dir: Path = None):
         if config_dir is None:
-            home = Path.home()
-            if sys.platform == "win32":
-                self.config_dir = Path(os.environ.get("APPDATA", home)) / "skills_auto_sync"
+            # Xác định thư mục cùng cấp với file thực thi/script
+            if getattr(sys, 'frozen', False):
+                # Nếu chạy từ file build (PyInstaller)
+                self.config_dir = Path(sys.executable).parent
             else:
-                self.config_dir = home / ".config" / "skills_auto_sync"
+                # Nếu chạy từ Python script thông thường (dự kiến ở project root)
+                self.config_dir = Path(__file__).parent.parent.absolute()
         else:
             self.config_dir = Path(config_dir)
 
@@ -43,55 +43,61 @@ class ConfigManager:
         self.load_config()
 
     def get_default_agent_paths(self) -> Dict[str, str]:
-        """Tự động phát hiện đường dẫn mặc định của Antigravity, Codex và Claude Code theo HĐH."""
+        """Tự động phát hiện đường dẫn mặc định của các Agent theo HĐH."""
         home = Path.home()
-        paths = {
-            "antigravity": str(home / ".gemini" / "config" / "skills"),
-            "codex": str(home / ".codex" / "skills"),
-            "claude": str(home / ".claude")
-        }
-        return paths
+        if sys.platform == "win32":
+            user_profile = Path(os.environ.get("USERPROFILE", home))
+            return {
+                "anti": str(user_profile / ".gemini" / "config"),
+                "codex": str(user_profile / ".codex"),
+                "claude": str(user_profile / ".claude")
+            }
+        else:
+            return {
+                "anti": str(home / ".gemini" / "config"),
+                "codex": str(home / ".codex"),
+                "claude": str(home / ".claude")
+            }
 
     def load_config(self) -> AppConfig:
-        """Nạp cấu hình từ file json, tự động điền đường dẫn nếu chưa có."""
-        defaults = self.get_default_agent_paths()
-        
+        """Nạp cấu hình từ file json cục bộ."""
         if self.config_file.exists():
             try:
                 with open(self.config_file, "r", encoding="utf-8") as f:
                     data = json.load(f)
                 
-                self.config.version = data.get("version", "1.2.0")
-                self.config.library_path = data.get("library_path", "")
-                self.config.git_remote_url = data.get("git_remote_url", "")
-                self.config.selected_agents = data.get("selected_agents", ["antigravity", "codex", "claude"])
+                self.config.version = data.get("version", "2.1.0")
+                self.config.skills_lib = data.get("skills_lib", "")
+                git_repo = data.get("git_repo", "")
+                if git_repo.startswith("/http"):
+                    git_repo = git_repo.lstrip("/")
+                self.config.git_repo = git_repo
                 
-                agent_paths = data.get("agent_paths", {})
-                for agent_key, default_p in defaults.items():
-                    if agent_key not in agent_paths or not agent_paths[agent_key]:
-                        agent_paths[agent_key] = default_p
-                self.config.agent_paths = agent_paths
+                # Nạp agents config
+                agents_data = data.get("agents", {})
+                self.config.agents = {
+                    "anti": agents_data.get("anti", 1),
+                    "codex": agents_data.get("codex", 1),
+                    "claude": agents_data.get("claude", 0)
+                }
+                
                 self.config.ignore_patterns = data.get("ignore_patterns", DEFAULT_IGNORE_PATTERNS)
-                self.config.git_settings = data.get("git_settings", {"auto_fetch": True, "auto_push": True})
             except Exception as e:
-                print(f"[ConfigManager] Lỗi nạp config ({e}), sử dụng mặc định.")
-                self.config.agent_paths = defaults
+                print(f"[ConfigManager] Lỗi nạp config.json ({e}), sử dụng mặc định.")
+                self.save_config()
         else:
-            self.config.agent_paths = defaults
             self.save_config()
 
         return self.config
 
     def save_config(self):
-        """Lưu trạng thái cấu hình hiện tại vào config.json."""
+        """Lưu cấu hình hiện tại vào config.json."""
         data = {
             "version": self.config.version,
-            "library_path": self.config.library_path,
-            "git_remote_url": self.config.git_remote_url,
-            "selected_agents": self.config.selected_agents,
-            "agent_paths": self.config.agent_paths,
-            "ignore_patterns": self.config.ignore_patterns,
-            "git_settings": self.config.git_settings
+            "agents": self.config.agents,
+            "skills_lib": self.config.skills_lib,
+            "git_repo": self.config.git_repo,
+            "ignore_patterns": self.config.ignore_patterns
         }
 
         try:

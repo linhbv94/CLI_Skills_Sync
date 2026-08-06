@@ -21,7 +21,11 @@ class GitEngine:
 
     def run_cmd(self, args: List[str], cwd: Path, timeout: int = 15) -> Tuple[int, str, str]:
         """Chạy lệnh git subprocess an toàn."""
+        import os
         try:
+            env = os.environ.copy()
+            env["GIT_TERMINAL_PROMPT"] = "0"  # Tắt prompt hỏi Username/Password
+            env["GIT_SSH_COMMAND"] = "ssh -o BatchMode=yes"  # Tắt prompt hỏi SSH key passphrase
             res = subprocess.run(
                 ["git"] + args,
                 cwd=cwd,
@@ -29,6 +33,7 @@ class GitEngine:
                 text=True,
                 encoding="utf-8",
                 errors="replace",
+                env=env,
                 timeout=timeout
             )
             return res.returncode, res.stdout.strip(), res.stderr.strip()
@@ -79,37 +84,62 @@ class GitEngine:
 
         return True, "Git Repo đã được liên kết chính xác."
 
-    def fetch_remote(self, repo_path: Path) -> bool:
-        """Thực hiện git fetch origin."""
+    def fetch_remote(self, repo_path: Path) -> Tuple[bool, str, str]:
+        """Thực hiện git fetch origin. Trả về (success, error_type, error_msg)."""
         if not (repo_path / ".git").exists():
-            return False
+            return False, "NO_REPO", "Chưa khởi tạo Git."
+        
         code, out, err = self.run_cmd(["fetch", "origin"], cwd=repo_path, timeout=10)
-        return code == 0
-
+        if code == 0:
+            return True, "", ""
+            
+        # Phân tích nguyên nhân lỗi dựa trên thông báo stderr
+        err_lower = err.lower()
+        if any(x in err_lower for x in ["auth", "permission denied", "could not read username", "terminal prompts disabled"]):
+            return False, "AUTH", f"Lỗi xác thực Git Remote (Chưa cấu hình Token hoặc SSH key): {err}"
+        elif any(x in err_lower for x in ["could not resolve host", "network is unreachable", "timed out", "connection reset"]):
+            return False, "OFFLINE", "Không có kết nối mạng (Offline)."
+        elif "not found" in err_lower:
+            return False, "NOT_FOUND", f"Không tìm thấy Repository trên Remote (Sai link): {err}"
+        
+        return False, "ERROR", err
 
     def get_git_status(self, repo_path: Path) -> GitStatusResult:
         """Đánh giá chi tiết trạng thái Git của Local Library vs Remote Repo."""
         if not self.is_git_available():
             return GitStatusResult(status="NO_GIT", error_message="Git CLI chưa được cài đặt.")
-
+        
         if not (repo_path / ".git").exists():
             return GitStatusResult(status="NO_GIT", error_message="Thư mục thư viện gốc chưa phải là Git repo.")
 
         # Thử fetch remote
-        is_online = self.fetch_remote(repo_path)
+        success, err_type, err_msg = self.fetch_remote(repo_path)
 
         # Kiểm tra Working Tree có bị sửa đổi chưa commit hay không
         code, status_out, _ = self.run_cmd(["status", "--porcelain"], cwd=repo_path)
         dirty_files = [line for line in status_out.splitlines() if line.strip()]
 
-        if not is_online:
-            return GitStatusResult(
-                status="OFFLINE",
-                dirty_files=dirty_files,
-                error_message="Không thể kết nối Internet/Git Remote (Offline Mode)."
-            )
+        if not success:
+            if err_type == "AUTH":
+                return GitStatusResult(
+                    status="AUTH_ERROR",
+                    dirty_files=dirty_files,
+                    error_message=err_msg
+                )
+            elif err_type == "NOT_FOUND":
+                return GitStatusResult(
+                    status="NOT_FOUND_ERROR",
+                    dirty_files=dirty_files,
+                    error_message=err_msg
+                )
+            else:
+                return GitStatusResult(
+                    status="OFFLINE",
+                    dirty_files=dirty_files,
+                    error_message="Không thể kết nối Internet/Git Remote (Offline Mode)."
+                )
 
-        # So sánh HEAD với origin/main (hoặc origin/HEAD)
+        # So sánh HEAD với origin/main
         code, rev_out, _ = self.run_cmd(["rev-list", "--left-right", "--count", "HEAD...origin/main"], cwd=repo_path)
         
         ahead = 0
@@ -160,6 +190,15 @@ class GitEngine:
             if code == 0:
                 return True, "Đã push dữ liệu mới lên Git Remote thành công."
             return False, f"Không thể push lên Remote: {err}"
+
+        elif mode == "AUTO_MERGE":
+            self.run_cmd(["add", "."], cwd=repo_path)
+            self.run_cmd(["commit", "-m", "auto sync: local changes before merge"], cwd=repo_path)
+            code, out, err = self.run_cmd(["pull", "origin", "main", "--no-rebase"], cwd=repo_path)
+            if code == 0:
+                self.run_cmd(["push", "origin", "main"], cwd=repo_path)
+                return True, "Đã tự động hợp nhất (Merge) và đẩy lên Git Remote thành công."
+            return False, f"Hợp nhất tự động thất bại (cần giải quyết bằng tay): {err}"
 
         elif mode == "FORCE_PULL":
             code, out, err = self.run_cmd(["reset", "--hard", "origin/main"], cwd=repo_path)

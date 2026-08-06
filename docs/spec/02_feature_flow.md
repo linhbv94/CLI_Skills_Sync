@@ -1,154 +1,150 @@
 # Feature Flow & State Specification: Skills Auto Sync Tool (`_spec2_feature_flow`)
 
-> **Version:** 1.1.0  
-> **Last Updated:** 2026-07-25  
-> **Target Audience:** Frontend/Backend Developers, Dev Agents, QA Engineers  
+> **Version:** 2.2.0  
+> **Last Updated:** 2026-08-06  
+> **Target Audience:** Developers, Dev Agents, QA Engineers  
 
 ---
 
-## 1. Sơ đồ Chuyển Trạng thái Engine (State Diagram)
+## 1. Sơ đồ Chuyển Trạng thái Engine CLI (CLI State Diagram)
 
-Sơ đồ mô tả toàn bộ vòng đời trạng thái của **Smart Sync Engine** khi vận hành (kèm giai đoạn **Upstream Scan & Sync**):
+Sơ đồ mô tả vòng đời hoạt động của ứng dụng dòng lệnh (CLI):
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Idle: Bật ứng dụng
+    [*] --> Init: Mở file thực thi hoặc Lối tắt (Shortcut/Alias)
 
-    state Idle {
-        [*] --> Ready: Nạp config.json thành công
-        Ready --> PathMissing: Thiếu đường dẫn Library
+    state Init {
+        [*] --> CheckConfigExists: Tìm config.json cùng cấp với file thực thi
+        CheckConfigExists --> ConfigMissing: Chưa có config.json
+        ConfigMissing --> CreatePlaceholderAndExit: Tạo config mẫu & Thoát
+        CheckConfigExists --> ReadConfigSuccess: Đọc config thành công
+        ReadConfigSuccess --> ResolvePaths: Tự động dò đường dẫn Agent active
     }
 
-    Idle --> UpstreamScanning: Người dùng bấm [Smart Sync]
+    Init --> CLI_Menu: ResolvePaths
     
-    state UpstreamScanning {
-        [*] --> ScanAgentFolders: Duyệt qua các Agent active (Max 3)
-        ScanAgentFolders --> ApplyFilter: Lọc bỏ .system, .git, .DS_Store
-        ApplyFilter --> CompareHashes: So sánh Hash/Timestamp với Library
-        CompareHashes --> CopyToLibrary: Phát hiện Agent file mới hơn
-        CopyToLibrary --> MarkLibraryDirty: Cập nhật Central Library
+    state CLI_Menu {
+        [*] --> WaitingForInput: Hiển thị Menu lựa chọn (Active/Disabled status)
+        WaitingForInput --> ProcessCommand: Nhập phím số & Enter
     }
 
-    UpstreamScanning --> Fetching: Khởi động Git Sync
+    CLI_Menu --> OneTimeSync: Command = "1" (Sync ngay)
+    CLI_Menu --> AutoWatchMode: Command = "2" (Chạy giám sát nền)
+    CLI_Menu --> CleanupEnv: Command = "3" (Dọn dẹp môi trường)
+    CLI_Menu --> ExitApp: Command = "4" (Thoát)
 
-    state Fetching {
-        [*] --> GitFetch: Chạy git fetch origin
-        GitFetch --> GitFetchSuccess: Thành công
-        GitFetch --> OfflineFallback: Thất bại (Offline)
+    state OneTimeSync {
+        [*] --> UpstreamScan: Quét các Agent active (anti, codex, claude = 1)
+        UpstreamScan --> SyncToTong: Chép file mới sang skills_lib
+        SyncToTong --> GitSync: Khởi chạy Git Sync (Fetch/Pull/Push)
+        GitSync --> DeployDownstream: Copy skills_lib ngược lại các Active Agent Dirs
+        DeployDownstream --> ShowResultAndReturn: In log kết quả ra Terminal
     }
 
-    Fetching --> Analyzing: Phân tích HEAD vs origin/main
-
-    state Analyzing {
-        [*] --> CheckStatus
-        CheckStatus --> UpToDate: Commits khớp nhau
-        CheckStatus --> Behind: Remote có commit mới
-        CheckStatus --> Ahead: Local có commit mới / Working Tree Dirty
-        CheckStatus --> Conflict: Cả 2 cùng có commit mới
+    state AutoWatchMode {
+        [*] --> StartWatcherDaemon: Kích hoạt luồng chạy nền (Background Thread/Process)
+        StartWatcherDaemon --> WatchPaths: Giám sát file system của các active folders
+        WatchPaths --> TriggerAutoSync: Phát hiện file sửa đổi hoặc Git Commit mới
+        TriggerAutoSync --> WatchPaths: Hoàn tất Sync & Tiếp tục lắng nghe
     }
 
-    Analyzing --> Pulling: Status = Behind
-    Analyzing --> Pushing: Status = Ahead
-    Analyzing --> ResolvingConflict: Status = Conflict
-    Analyzing --> DeployingAdapters: Status = UpToDate / Offline
-
-    Pulling --> DeployingAdapters: Git Pull OK
-    Pushing --> DeployingAdapters: Git Push OK
-    ResolvingConflict --> DeployingAdapters: Người dùng chọn hướng xử lý
-
-    state DeployingAdapters {
-        [*] --> RenderAgentsMd: Copy shared_rules -> AGENTS.md
-        RenderAgentsMd --> RenderClaudeMd: Render -> CLAUDE.md
-        RenderClaudeMd --> CopySkills: Copy folder skills/ -> Agent Dirs (Loại trừ .system)
+    state CleanupEnv {
+        [*] --> ConfirmCleanup: Hiển thị cảnh báo & Hỏi xác nhận (y/N)
+        ConfirmCleanup --> CancelCleanup: Nhập 'N' hoặc phím khác
+        ConfirmCleanup --> ExecuteCleanup: Nhập 'y'
+        state ExecuteCleanup {
+            [*] --> CleanLibrary: Xóa file/folder trong skills_lib ngoại trừ `.git`
+            CleanLibrary --> CleanActiveAgents: Xóa rules file (AGENTS.md/CLAUDE.md) và folder `skills` của active agents (giữ lại `.system` cho Codex)
+        }
+        ExecuteCleanup --> ReturnToMenu: Hoàn tất
+        CancelCleanup --> ReturnToMenu: Hủy
     }
 
-    DeployingAdapters --> Success: Hoàn tất không lỗi
-    DeployingAdapters --> Error: Phát hiện lỗi IO / Permission
-
-    Success --> Idle: Quay lại trạng thái Sẵn sàng
-    Error --> Idle: Hiển thị Log Lỗi
+    OneTimeSync --> CLI_Menu: Hoàn tất / Trở lại Menu chính
+    AutoWatchMode --> CLI_Menu: Nhấn Ctrl+C để dừng
+    CleanupEnv --> CLI_Menu: Hoàn tất / Trở lại Menu chính
+    ExitApp --> [*]
 ```
 
 ---
 
-## 2. Luồng Đồng bộ Ngược 3 Nguồn (Upstream Reverse Sync Sequence)
-
-Nhiệm vụ: Khi người dùng chỉnh sửa skill trực tiếp ở Antigravity hay Codex, Engine sẽ phát hiện, gom về Library gốc trước khi đẩy lên Git Remote.
+## 2. Luồng Đồng bộ Ngược và Đẩy Git (CLI Sync Sequence)
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant App as Sync Engine
-    participant AG as Antigravity (~/.gemini/config/skills)
-    participant CX as Codex (~/.codex/skills)
-    participant Library as Local Skills Library
-    participant Git as Git Remote Repo
+    participant User as Người Dùng (CLI)
+    participant Engine as CLI Sync Engine
+    participant Agent as Active Agents (anti, codex, claude)
+    participant Tong as Thư viện Tổng (skills_lib)
+    participant Git as Git Remote
 
-    rect rgb(255, 245, 235)
-        note over App, CX: Bước 1: Quét và Lọc Thư mục
-        App->>AG: Quét danh sách file trong skills/
-        App->>CX: Quét danh sách file (LOẠI BỎ THƯ MỤC .system)
+    User->>Engine: Bật app/phím tắt, nhập 1 -> Enter
+    Engine->>Engine: Đọc config.json cùng cấp
+    Engine->>Engine: Dò đường dẫn Agent tự động theo OS
+    
+    Note over Engine, Agent: Bước 1: Quét các Active Agent Dirs cục bộ
+    Engine->>Agent: Quét files (bỏ qua `.system` của Codex)
+    Engine->>Tong: So sánh hash & modified_time
+    
+    alt Có file ở Agent mới hơn Thư viện Tổng
+        Engine->>Tong: Copy file mới về Thư viện Tổng
+        Engine->>Engine: Đánh dấu Thư viện Tổng là Dirty (có sửa đổi)
     end
-
-    rect rgb(235, 248, 255)
-        note over App, Library: Bước 2: Gom về Library gốc (Upstream Sync)
-        App->>App: So sánh Hash / Modified Time giữa Agent & Library
-        alt Phát hiện Skill ở Antigravity mới hơn Library
-            App->>Library: Copy file từ Antigravity -> Library
-            App->>CX: Ghi đè file tương ứng sang Codex
-        else Phát hiện Skill ở Codex mới hơn Library
-            App->>Library: Copy file từ Codex -> Library (Bỏ qua .system)
-            App->>AG: Ghi đè file tương ứng sang Antigravity
-        end
+    
+    Note over Engine, Git: Bước 2: Đồng bộ Git Remote
+    Engine->>Git: Gọi git fetch origin
+    Engine->>Engine: Kiểm tra trạng thái đồng bộ Git (Ahead/Behind/Diverged)
+    
+    alt Trạng thái Behind (Remote có mới hơn)
+        Engine->>Git: Gọi git pull --ff-only
+        Git-->>Engine: Cập nhật thư viện tổng
     end
-
-    rect rgb(240, 255, 244)
-        note over App, Git: Bước 3: Git Smart Sync & Deploy Adapters
-        App->>Git: git status -> Phát hiện Working Tree Dirty
-        App->>Git: git add . && git commit -m "sync from agent" && git push
-        App->>Library: Render shared_rules/agents.md -> AGENTS.md / CLAUDE.md
+    
+    alt Trạng thái Ahead (Local có mới hơn) hoặc Dirty ở bước 1
+        Engine->>Git: Gọi git add . && git commit && git push
+        Git-->>Engine: Lưu trữ thành công
     end
+    
+    Note over Engine, Agent: Bước 3: Triển khai Downstream sang các Agent
+    Engine->>Tong: Đọc AGENTS.md
+    Engine->>Agent: Sao chép rules (đổi tên CLAUDE.md cho Claude) và deploy folder skills/ (giữ nguyên `.system` cho Codex)
+    
+    Engine->>User: Thông báo thành công và dừng
 ```
 
 ---
 
-## 3. Luồng Khởi chạy Lần đầu & Tự động Phát hiện Đường dẫn (First-Time Setup Flow)
+## 3. Luồng Nghiệp vụ Giải quyết Xung đột Git Diverged (Conflict Resolution Flow)
+
+Khi phát hiện trạng thái Git là `DIVERGED`:
 
 ```mermaid
-flowchart TD
-    A[Bắt đầu: Mở Tool] --> B{Kiểm tra file config.json}
-    B -- Đã tồn tại --> C[Nạp Cấu hình vào Bộ nhớ]
-    B -- Chưa tồn tại --> D[Khởi tạo Engine Auto-Discovery]
+stateDiagram-v2
+    [*] --> DivergedState: Trạng thái Git = DIVERGED
+    DivergedState --> ShowResolutionMenu: Hiển thị Menu lựa chọn giải quyết
     
-    D --> E[Nhận diện Hệ điều hành: OS Platform]
-    E --> F{OS là gì?}
+    ShowResolutionMenu --> ChoiceRemote: Nhập 'a' (Remote Wins)
+    ShowResolutionMenu --> ChoiceLocal: Nhập 'b' (Local Wins)
+    ShowResolutionMenu --> ChoiceCancel: Nhập 'c' (Hủy)
     
-    F -- macOS --> G[Set default search paths: ~/.gemini/config, ~/.codex/skills, ~/.claude]
-    F -- Windows --> H[Set default search paths: %USERPROFILE%\.gemini\config, %USERPROFILE%\.codex\skills, %USERPROFILE%\.claude]
+    state ChoiceRemote {
+        [*] --> GitResetHard: Chạy git reset --hard origin/main
+        GitResetHard --> DeployDownstreamRemote: Deploy các thay đổi mới kéo về sang các Agent
+    }
     
-    G --> I[Kiểm tra sự tồn tại của thư mục trên đĩa cứng]
-    H --> I
+    state ChoiceLocal {
+        [*] --> GitPushForce: Chạy git push --force-with-lease origin main
+    }
     
-    I --> J[Tự động điền các Path tìm thấy vào Form]
-    J --> K[Ghi file config.json ban đầu]
-    C --> L[Hiển thị Giao diện Chính với dữ liệu cấu hình]
-    K --> L
+    state ChoiceCancel {
+        [*] --> SkipSync: Bỏ qua bước đồng bộ, tiếp tục chạy ứng dụng
+    }
+    
+    ChoiceRemote --> FinishResolution
+    ChoiceLocal --> FinishResolution
+    ChoiceCancel --> FinishResolution
+    
+    FinishResolution --> [*]: Quay lại CLI Menu chính
 ```
-
----
-
-## 4. Chi tiết Logic Xử lý Xung đột Git (Conflict Resolution Logic)
-
-Khi Git báo trạng thái **Diverged** (Local và Remote đều có commit mới không thể auto fast-forward):
-
-1. **Tạm dừng tiến trình Smart Sync tự động.**
-2. **Hiển thị Modal Xử lý Xung đột (Conflict Dialog)** với 3 tùy chọn:
-   * **Option A: Pull & Override Local (Chấp nhận bản trên Remote):**
-     * Thực thi: `git reset --hard origin/main`
-     * Tác động: Bỏ tất cả thay đổi local chưa push, lấy bản remote về.
-   * **Option B: Push Force (Dùng bản tại Máy hiện tại):**
-     * Thực thi: `git push --force-with-lease origin main`
-     * Tác động: Ghi đè bản remote bằng bản local của máy này.
-   * **Option C: Manual Merge (Tự giải quyết thủ công):**
-     * Thực thi: Mở cửa sổ Terminal / Git Client để người dùng tự gộp code.
-
