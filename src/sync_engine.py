@@ -84,6 +84,12 @@ class SyncEngine:
                     )
                     with open(gitignore_file, "w", encoding="utf-8") as f:
                         f.write(content)
+                    
+                    # Chạy dọn dẹp cache của Git để đảm bảo .gitignore có hiệu lực ngay lập tức
+                    # (Xoá các file rác như .DS_Store đã lỡ bị track trước đó khỏi index)
+                    import subprocess
+                    subprocess.run(["git", "rm", "-r", "--cached", "."], cwd=library_path, capture_output=True)
+                    subprocess.run(["git", "add", "."], cwd=library_path, capture_output=True)
                 except Exception:
                     pass
 

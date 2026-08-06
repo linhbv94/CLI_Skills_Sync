@@ -204,7 +204,7 @@ def run_cleanup_environment(config_mgr, git_engine):
         lib_path = Path(config.skills_lib)
         if lib_path.exists():
             for item in lib_path.iterdir():
-                if item.name == ".git":
+                if item.name in [".git", ".gitignore"]:
                     continue
                 try:
                     if item.is_dir():
