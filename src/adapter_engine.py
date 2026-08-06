@@ -174,3 +174,32 @@ class AdapterEngine:
                     print(f"[AdapterEngine] Lỗi deploy CLAUDE.md: {e}")
 
         return deployed_list
+
+    def is_downstream_rules_pending(
+        self,
+        library_path: Path,
+        agent_paths: Dict[str, str],
+        agent_name: str
+    ) -> bool:
+        """Kiểm tra xem file rules (AGENTS.md / CLAUDE.md) của Agent có cần cập nhật từ Central Library không."""
+        lib_root_file = library_path / "AGENTS.md"
+        if not lib_root_file.exists():
+            return False
+
+        agent_dir_str = agent_paths.get(agent_name, "")
+        if not agent_dir_str:
+            return False
+
+        agent_dir = Path(agent_dir_str)
+        if agent_name in ["antigravity", "codex"]:
+            target_file = agent_dir.parent / "AGENTS.md" if agent_dir.name == "skills" else agent_dir / "AGENTS.md"
+        elif agent_name == "claude":
+            target_file = agent_dir / "CLAUDE.md"
+        else:
+            return False
+
+        if not target_file.exists():
+            return True
+
+        return self.get_file_hash(lib_root_file) != self.get_file_hash(target_file)
+

@@ -205,3 +205,47 @@ class SyncEngine:
             deployed_agents.append(agent_name)
 
         return deployed_agents
+
+    def count_downstream_pending(
+        self,
+        library_path: Path,
+        agent_paths: Dict[str, str],
+        agent_name: str,
+        ignore_patterns: List[str]
+    ) -> int:
+        """Đếm số lượng file skills ở Central Library chưa được phân bổ hoặc đã khác so với Agent."""
+        library_skills_dir = library_path / "skills"
+        if not library_skills_dir.exists():
+            return 0
+
+        agent_dir_str = agent_paths.get(agent_name, "")
+        if not agent_dir_str:
+            return 0
+
+        agent_dir = Path(agent_dir_str)
+        target_skills_dir = agent_dir / "skills"
+
+        pending_count = 0
+        for root, dirs, files in os.walk(library_skills_dir):
+            if ".system" in dirs:
+                dirs.remove(".system")
+
+            for file_name in files:
+                src_file = Path(root) / file_name
+                try:
+                    rel_path = src_file.relative_to(library_skills_dir)
+                except ValueError:
+                    continue
+
+                if self.is_ignored(str(rel_path), ignore_patterns):
+                    continue
+
+                dest_file = target_skills_dir / rel_path
+                src_hash = self.get_file_hash(src_file)
+                dest_hash = self.get_file_hash(dest_file)
+
+                if src_hash != dest_hash:
+                    pending_count += 1
+
+        return pending_count
+

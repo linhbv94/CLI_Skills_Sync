@@ -5,6 +5,14 @@ import shutil
 import argparse
 from pathlib import Path
 
+# Ensure UTF-8 output encoding for Windows terminals
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+
 # Suppress macOS Tk deprecation warning (just in case)
 os.environ["TK_SILENCE_DEPRECATION"] = "1"
 
@@ -30,6 +38,9 @@ LOCALIZED = {
         "agent_msg_skills_rules": "➔ Detected: {} new/modified skills, rules file changed.",
         "agent_msg_skills": "➔ Detected: {} new/modified skills.",
         "agent_msg_rules": "➔ Detected: rules file changed.",
+        "agent_msg_downstream_both": "➔ Ready to deploy {} skill(s) & rules from Central Library.",
+        "agent_msg_downstream_skills": "➔ Ready to deploy {} skill(s) from Central Library.",
+        "agent_msg_downstream_rules": "➔ Ready to deploy rules file from Central Library.",
         "agent_msg_uptodate": "➔ Up-to-date.",
         "agent_msg_error": "➔ Folder scanning error (Check paths/configuration).",
         "git_behind": "➔ There is/are {} new commit(s) on Remote (Behind).",
@@ -159,6 +170,9 @@ LOCALIZED = {
         "agent_msg_skills_rules": "➔ Phát hiện: {} skills mới/chỉnh sửa, file rules mới.",
         "agent_msg_skills": "➔ Phát hiện: {} skills mới/chỉnh sửa.",
         "agent_msg_rules": "➔ Phát hiện: file rules mới.",
+        "agent_msg_downstream_both": "➔ Sẵn sàng phân bổ {} skills & quy tắc từ Thư viện tổng xuống Agent.",
+        "agent_msg_downstream_skills": "➔ Sẵn sàng phân bổ {} skills từ Thư viện tổng xuống Agent.",
+        "agent_msg_downstream_rules": "➔ Sẵn sàng phân bổ file quy tắc AGENTS.md từ Thư viện tổng xuống Agent.",
         "agent_msg_uptodate": "➔ Đã đồng bộ mới nhất (Up-to-date).",
         "agent_msg_error": "➔ Lỗi quét thư mục (Hãy kiểm tra cấu hình).",
         "git_behind": "➔ Có {} commit mới trên Remote chưa kéo (Behind).",
@@ -567,8 +581,9 @@ def print_detected_changes(config, config_mgr, sync_engine, git_engine):
         
     upstream_msg = {}
     has_changes = False
+    adapter_engine = AdapterEngine()
     
-    # Quét rules (AGENTS.md/CLAUDE.md)
+    # Quét rules (AGENTS.md/CLAUDE.md) & skills
     for agent_name in selected_agents:
         agent_dir = Path(agent_paths[agent_name])
         rule_changed = False
@@ -582,7 +597,7 @@ def print_detected_changes(config, config_mgr, sync_engine, git_engine):
             if agent_rule_file.stat().st_mtime > mtime_lib:
                 rule_changed = True
                 
-        # Quét skills
+        # Quét Upstream skills
         try:
             up_res = sync_engine.scan_and_sync_upstream(
                 Path(config.skills_lib),
@@ -603,7 +618,24 @@ def print_detected_changes(config, config_mgr, sync_engine, git_engine):
                 upstream_msg[agent_name] = t("agent_msg_rules")
                 has_changes = True
             else:
-                upstream_msg[agent_name] = t("agent_msg_uptodate")
+                # Nếu không có Upstream, kiểm tra Downstream (Central Library -> Agent)
+                ds_skills = sync_engine.count_downstream_pending(
+                    Path(config.skills_lib), agent_paths, agent_name, config.ignore_patterns
+                )
+                ds_rules = adapter_engine.is_downstream_rules_pending(
+                    Path(config.skills_lib), agent_paths, agent_name
+                )
+                if ds_skills > 0 and ds_rules:
+                    upstream_msg[agent_name] = t("agent_msg_downstream_both", ds_skills)
+                    has_changes = True
+                elif ds_skills > 0:
+                    upstream_msg[agent_name] = t("agent_msg_downstream_skills", ds_skills)
+                    has_changes = True
+                elif ds_rules:
+                    upstream_msg[agent_name] = t("agent_msg_downstream_rules")
+                    has_changes = True
+                else:
+                    upstream_msg[agent_name] = t("agent_msg_uptodate")
         except Exception:
             upstream_msg[agent_name] = t("agent_msg_error")
 
