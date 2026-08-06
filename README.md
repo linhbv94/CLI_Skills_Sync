@@ -36,6 +36,7 @@ File `config.json` bắt buộc phải đặt ở **cùng thư mục với file 
 ```json
 {
   "version": "2.2.0",
+  "lang": "en",
   "agents": {
     "anti": 1,
     "codex": 1,
@@ -55,14 +56,15 @@ File `config.json` bắt buộc phải đặt ở **cùng thư mục với file 
 ```
 
 ### Các tham số cấu hình:
-1. **`agents`**: Bật/tắt các AI Agent cục bộ. Điền `1` để kích hoạt đồng bộ, `0` để bỏ qua.
+1. **`lang`**: Ngôn ngữ hiển thị của ứng dụng dòng lệnh. Nhập `"en"` để hiển thị Tiếng Anh (Mặc định) hoặc `"vi"` để hiển thị Tiếng Việt.
+2. **`agents`**: Bật/tắt các AI Agent cục bộ. Điền `1` để kích hoạt đồng bộ, `0` để bỏ qua.
    * `anti`: Antigravity Agent.
    * `codex`: Codex Agent.
    * `claude`: Claude Code Agent.
-2. **`skills_lib`**: Đường dẫn tuyệt đối đến thư mục chứa Thư viện Skills gốc (Central Library) trên máy bạn.
-3. **`git_repo`**: Link Git Remote Repository (HTTPS/SSH) để đồng bộ commits.
+3. **`skills_lib`**: Đường dẫn tuyệt đối đến thư mục chứa Thư viện Skills gốc (Central Library) trên máy bạn.
+4. **`git_repo`**: Link Git Remote Repository (HTTPS/SSH) để đồng bộ commits.
    * *Mẹo:* Nếu bạn muốn chạy tool ở **chế độ offline hoàn toàn** (chỉ đồng bộ cục bộ giữa các Agent trên máy mà không sử dụng Git), hãy để trống trường này (`"git_repo": ""`).
-4. **`ignore_patterns`**: Các pattern định dạng file/thư mục được Sync Engine bỏ qua không đồng bộ (như file rác hệ điều hành, file log, temp).
+5. **`ignore_patterns`**: Các pattern định dạng file/thư mục được Sync Engine bỏ qua không đồng bộ (như file rác hệ điều hành, file log, temp).
 
 ### Đường dẫn mặc định của các Agent:
 Nếu anh để trống đường dẫn, Sync Engine tự động định vị thư mục làm việc của Agent theo quy chuẩn sau:
