@@ -56,7 +56,7 @@ LOCALIZED = {
         "init_config_created": "[INFO] Created a default config.json file in the same directory.",
         "init_config_path": "[INFO] Config file path: {}\n",
         "init_config_guide": "💡 Please open config.json with a Text Editor to configure:\n  - 'skills_lib': Absolute path to your Central Library.\n  - 'git_repo': Git remote repository link to sync.\n  - 'agents': Set 1 to enable, 0 to disable.",
-        "press_enter_exit": "\nPress Enter to exit the application...",
+        "press_enter_exit": "\nPress Enter to continue (after you have edited and saved config.json), or type 'q' to exit: ",
         
         # Sync progress screen
         "sync_start": "\n>>> Starting Smart Sync (Local & Git)...",
@@ -154,7 +154,7 @@ LOCALIZED = {
         "init_config_created": "[INFO] Đã tạo file config.json mẫu cùng cấp với file chạy.",
         "init_config_path": "[INFO] Đường dẫn file cấu hình: {}\n",
         "init_config_guide": "💡 Vui lòng mở file config.json bằng Text Editor để điền thông số:\n  - 'skills_lib': Đường dẫn tuyệt đối đến Central Library của bạn.\n  - 'git_repo': Link Git remote repository để đồng bộ.\n  - 'agents': Thiết lập 1 cho agent muốn dùng, 0 để tắt.",
-        "press_enter_exit": "\nNhấn Enter để thoát ứng dụng...",
+        "press_enter_exit": "\nNhấn Enter để tiếp tục (sau khi bạn đã sửa và lưu file config.json), hoặc gõ 'q' để thoát: ",
         
         # Sync progress screen
         "sync_start": "\n>>> Bắt đầu tiến trình Smart Sync cục bộ & Git...",
@@ -614,15 +614,22 @@ def main():
         CURRENT_LANG = "en"
 
     # Kiểm tra cấu hình ban đầu
-    if not config.skills_lib:
+    while not config.skills_lib:
         clear_screen()
         print(t("init_config_title"))
         print(t("init_config_created"))
         print(t("init_config_path", config_mgr.config_file))
         print(t("init_config_guide"))
         print("======================================================================")
-        input(t("press_enter_exit"))
-        sys.exit(0)
+        choice = input(t("press_enter_exit")).strip().lower()
+        if choice in ["q", "exit", "quit"]:
+            sys.exit(0)
+        
+        # Tải lại cấu hình
+        config = config_mgr.load_config()
+        CURRENT_LANG = config.lang if hasattr(config, "lang") else "en"
+        if CURRENT_LANG not in ["en", "vi"]:
+            CURRENT_LANG = "en"
 
     sync_engine = SyncEngine()
     adapter_engine = AdapterEngine()
