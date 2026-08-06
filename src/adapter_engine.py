@@ -88,6 +88,11 @@ class AdapterEngine:
                 with open(lib_root_file, "w", encoding="utf-8") as f:
                     f.write(content)
 
+                # Đồng bộ timestamp mtime để giữ tính nhất quán
+                import os
+                agent_mtime = newer_agent_rules.stat().st_mtime
+                os.utime(lib_root_file, (agent_mtime, agent_mtime))
+
                 return True, f"Đã gom AGENTS.md/CLAUDE.md sửa đổi từ {source_info} về Central Library."
             except Exception as e:
                 print(f"[AdapterEngine] Lỗi gom upstream rules: {e}")
@@ -111,6 +116,7 @@ class AdapterEngine:
             return []
 
         try:
+            lib_mtime = source_agents_md.stat().st_mtime
             with open(source_agents_md, "r", encoding="utf-8") as f:
                 rules_content = f.read()
         except Exception as e:
@@ -137,6 +143,8 @@ class AdapterEngine:
                     target_file.parent.mkdir(parents=True, exist_ok=True)
                     with open(target_file, "w", encoding="utf-8") as f:
                         f.write(rules_content)
+                    import os
+                    os.utime(target_file, (lib_mtime, lib_mtime))
                     deployed_list.append(f"{agent_name} -> {target_file.name}")
                 except Exception as e:
                     print(f"[AdapterEngine] Lỗi deploy AGENTS.md: {e}")
@@ -147,6 +155,8 @@ class AdapterEngine:
                     claude_content = CLAUDE_HEADER_METADATA + rules_content
                     with open(target_claude_file, "w", encoding="utf-8") as f:
                         f.write(claude_content)
+                    import os
+                    os.utime(target_claude_file, (lib_mtime, lib_mtime))
                     deployed_list.append(f"claude -> CLAUDE.md")
                 except Exception as e:
                     print(f"[AdapterEngine] Lỗi deploy CLAUDE.md: {e}")
