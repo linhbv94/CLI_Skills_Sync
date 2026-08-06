@@ -114,8 +114,8 @@ Khi chạy ứng dụng dòng lệnh, bạn sẽ tương tác thông qua menu ph
   1. Quét upstream: So sánh timestamps, file nào mới hơn ở Agent sẽ được gom ngược về Thư viện tổng.
   2. Đồng bộ Git: Tự động pull/push commits mới.
   3. Deploy downstream: Phân phối `AGENTS.md` (hoặc render đổi tên thành `CLAUDE.md` kèm header cho Claude) và folder `skills` sang các Agent còn lại cục bộ.
-* **[2] Giám sát chạy nền (Auto-Sync Watcher Daemon):** Chạy một bộ watcher siêu nhẹ (chu kỳ quét 3 giây) liên tục lắng nghe thay đổi file. Khi phát hiện chỉnh sửa, tool tự động kích hoạt luồng Smart Sync. Nhấn `Ctrl + C` để thoát chế độ này an toàn.
-* **[3] Dọn dẹp môi trường (Clean up environment):** Xóa sạch toàn bộ rules & skills ở thư viện tổng và các Agent active (ngoại trừ `.git` của thư viện tổng và `.system` của Codex) ➔ Tạo commit dọn dẹp và **tự động đẩy lên Git Remote** để reset sạch kho lưu trữ.
+* **[2] Làm mới trạng thái (Refresh status):** Quét kiểm tra nhanh xem Thư viện tổng và các Agent có thay đổi mới nào không và cập nhật trạng thái hiển thị trên màn hình Menu.
+* **[3] Dọn dẹp môi trường (Clean up environment):** Xóa sạch toàn bộ rules & skills ở thư viện tổng và các Agent active (ngoại trừ `.git` của thư viện tổng và `.system` của Codex) ➔ Tạo commit dọn dẹp và **tự động ép force push lên Git Remote** để reset sạch kho lưu trữ.
 * **[4] Thoát ứng dụng.**
 
 ### Cơ chế Lối tắt (Shortcuts) 1-Click:
