@@ -122,7 +122,7 @@ Khi chạy ứng dụng dòng lệnh, bạn sẽ tương tác thông qua menu ph
 
 ### Cơ chế Lối tắt (Shortcuts) 1-Click:
 * **Trên Windows:** Tạo một **Windows Shortcut** trỏ tới file `skill_auto_sync.exe`. Chuột phải vào Shortcut ➔ Chọn Properties ➔ Config phần *Start in* là đường dẫn thư mục chứa `.exe` (để file đọc được `config.json` cùng cấp). Kéo Shortcut ra Desktop hoặc Ghim vào Taskbar để click chạy nhanh.
-* **Trên macOS:** Nhấp đúp vào file [dist/skill_auto_sync.command](file:///Users/vic/_Work/Skills_Sync/dist/skill_auto_sync.command) ngoài màn hình Desktop/Finder. File script này sẽ tự động CD về đúng thư mục chứa tệp nhị phân và chạy tool dòng lệnh ngay lập tức.
+* **Trên macOS:** Nhấp đúp vào file [dist/skill_auto_sync.command](dist/skill_auto_sync.command) ngoài màn hình Desktop/Finder. File script này sẽ tự động CD về đúng thư mục chứa tệp nhị phân và chạy tool dòng lệnh ngay lập tức.
 
 ---
 
