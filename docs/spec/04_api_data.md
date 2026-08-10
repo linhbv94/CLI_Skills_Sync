@@ -28,6 +28,11 @@ File `config.json` sẽ nằm ở thư mục hệ thống chuẩn tùy theo hệ
       "enum": ["en", "vi"],
       "description": "Ngôn ngữ hiển thị (en = Tiếng Anh, vi = Tiếng Việt)"
     },
+    "theme": {
+      "type": "string",
+      "enum": ["dark", "light", "system"],
+      "description": "Giao diện hiển thị (dark = Tối, light = Sáng, system = Theo hệ thống)"
+    },
     "agents": {
       "type": "object",
       "properties": {
@@ -51,7 +56,7 @@ File `config.json` sẽ nằm ở thư mục hệ thống chuẩn tùy theo hệ
       "description": "Danh sách các pattern file/thư mục cần bỏ qua khi sync"
     }
   },
-  "required": ["version", "lang", "agents", "skills_lib", "git_repo", "ignore_patterns"]
+  "required": ["version", "lang", "theme", "agents", "skills_lib", "git_repo", "ignore_patterns"]
 }
 ```
 
