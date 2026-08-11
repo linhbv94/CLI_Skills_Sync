@@ -1,5 +1,6 @@
 import subprocess
 import shutil
+import os
 from pathlib import Path
 from dataclasses import dataclass
 from typing import Tuple, List
@@ -225,6 +226,22 @@ class GitEngine:
             dirty_files=dirty_files
         )
 
+    def _safe_commit(self, repo_path: Path, commit_msg: str) -> Tuple[int, str, str]:
+        code_add, _, err_add = self.run_cmd(["add", "."], cwd=repo_path)
+        if code_add != 0:
+            return code_add, "", err_add
+        code_cm, out_cm, err_cm = self.run_cmd(["commit", "-m", commit_msg], cwd=repo_path)
+        if code_cm != 0:
+            combined_err = (err_cm + " " + out_cm).lower()
+            if "tell me who you are" in combined_err or "unable to auto-detect email" in combined_err or "identity unknown" in combined_err:
+                username = os.environ.get("USERNAME") or os.environ.get("USER") or "SkillsSyncUser"
+                email = f"{username}@users.noreply.github.com"
+                code_cm, out_cm, err_cm = self.run_cmd(
+                    ["-c", f"user.name={username}", "-c", f"user.email={email}", "commit", "-m", commit_msg],
+                    cwd=repo_path
+                )
+        return code_cm, out_cm, err_cm
+
     def execute_smart_sync(self, repo_path: Path, mode: str, lang: str = "en") -> Tuple[bool, str]:
         """
         Thực thi hành động Git theo mode.
@@ -240,16 +257,18 @@ class GitEngine:
             return False, l["pull_ff_err"].format(err)
 
         elif mode == "AUTO_PUSH":
-            self.run_cmd(["add", "."], cwd=repo_path)
-            self.run_cmd(["commit", "-m", "auto sync: skills library update"], cwd=repo_path)
+            code_cm, out_cm, err_cm = self._safe_commit(repo_path, "auto sync: skills library update")
+            if code_cm != 0 and "nothing to commit" not in (err_cm + out_cm).lower():
+                return False, f"Git commit failed: {err_cm or out_cm}"
             code, out, err = self.run_cmd(["push", "origin", "main"], cwd=repo_path)
             if code == 0:
                 return True, l["push_ok"]
             return False, l["push_err"].format(err)
 
         elif mode == "AUTO_MERGE":
-            self.run_cmd(["add", "."], cwd=repo_path)
-            self.run_cmd(["commit", "-m", "auto sync: local changes before merge"], cwd=repo_path)
+            code_cm, out_cm, err_cm = self._safe_commit(repo_path, "auto sync: local changes before merge")
+            if code_cm != 0 and "nothing to commit" not in (err_cm + out_cm).lower():
+                return False, f"Git commit failed: {err_cm or out_cm}"
             code, out, err = self.run_cmd(["pull", "origin", "main", "--no-rebase"], cwd=repo_path)
             if code == 0:
                 self.run_cmd(["push", "origin", "main"], cwd=repo_path)
