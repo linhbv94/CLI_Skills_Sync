@@ -54,14 +54,14 @@ LOCALIZED = {
         "git_uptodate": "➔ Up-to-date.",
         "git_error": "➔ Git error: {}",
         "select_option": "PLEASE SELECT AN OPTION (Type number and press Enter):",
-        "option_sync": "  [1] Sync now (Smart Sync Now)",
-        "option_refresh": "  [2] Refresh status",
-        "option_cleanup": "  [3] Clean up environment",
-        "option_edit_config": "  [4] Edit configuration",
-        "option_open_folder": "  [5] Open configuration folder",
-        "option_exit": "  [6] Exit application",
-        "your_choice": "Your choice (1/2/3/4/5/6): ",
-        "invalid_choice": "\n❌ Invalid choice. Please enter a number between 1 and 6.",
+        "option_sync": "  [1] Smart Sync Now (Update Skills and Rules)",
+        "option_refresh": "  [2] Refresh Status",
+        "option_cleanup": "  [3] Clean Up Environment",
+        "option_edit_config": "  [4] Edit Config",
+        "option_open_folder": "  [5] Open Config Folder",
+        "option_exit": "  [0] Exit",
+        "your_choice": "Your choice (0-5): ",
+        "invalid_choice": "\n❌ Invalid choice. Please enter a number between 0 and 5.",
         "exit_msg": "\nThank you for using the tool! Goodbye.",
         
         # Onboarding
@@ -186,14 +186,14 @@ LOCALIZED = {
         "git_uptodate": "➔ Đã đồng bộ mới nhất (Up-to-date).",
         "git_error": "➔ Lỗi kiểm tra Git: {}",
         "select_option": "VUI LÒNG CHỌN CHỨC NĂNG (Nhập số tương ứng rồi nhấn Enter):",
-        "option_sync": "  [1] Đồng bộ ngay (Smart Sync Now)",
-        "option_refresh": "  [2] Làm mới trạng thái (Refresh status)",
-        "option_cleanup": "  [3] Dọn dẹp môi trường (Clean up environment)",
-        "option_edit_config": "  [4] Sửa cấu hình (Edit configuration)",
-        "option_open_folder": "  [5] Mở thư mục cấu hình (Open config folder)",
-        "option_exit": "  [6] Thoát ứng dụng",
-        "your_choice": "Lựa chọn của bạn (1/2/3/4/5/6): ",
-        "invalid_choice": "\n❌ Lựa chọn không hợp lệ. Vui lòng nhập số từ 1 đến 6.",
+        "option_sync": "  [1] Đồng bộ thông minh ngay",
+        "option_refresh": "  [2] Làm mới trạng thái",
+        "option_cleanup": "  [3] Dọn dẹp môi trường",
+        "option_edit_config": "  [4] Sửa cấu hình",
+        "option_open_folder": "  [5] Mở thư mục cấu hình",
+        "option_exit": "  [0] Thoát",
+        "your_choice": "Lựa chọn của bạn (0-5): ",
+        "invalid_choice": "\n❌ Lựa chọn không hợp lệ. Vui lòng nhập số từ 0 đến 5.",
         "exit_msg": "\nCảm ơn bạn đã sử dụng công cụ! Tạm biệt.",
         
         # Onboarding
@@ -919,7 +919,7 @@ def main():
             except Exception as e:
                 print(t("open_folder_err", str(e)))
             time.sleep(2)
-        elif choice == "6":
+        elif choice == "0":
             print(t("exit_msg"))
             import platform
             system = platform.system()
