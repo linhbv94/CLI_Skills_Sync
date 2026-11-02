@@ -1,5 +1,5 @@
+from src import safe_sync_io
 import os
-import hashlib
 from pathlib import Path
 from typing import List, Dict, Tuple
 
@@ -26,16 +26,8 @@ class AdapterEngine:
 
     @staticmethod
     def get_file_hash(filepath: Path) -> str:
-        if not filepath.exists() or not filepath.is_file():
-            return ""
-        hasher = hashlib.md5()
-        try:
-            with open(filepath, "rb") as f:
-                while chunk := f.read(8192):
-                    hasher.update(chunk)
-            return hasher.hexdigest()
-        except Exception:
-            return ""
+        return safe_sync_io.file_hash(filepath.parent, filepath.name)
+
 
     def get_agent_rules_files(self, agent_name: str, agent_dir_str: str) -> List[Path]:
         """Lấy danh sách các file rules tiềm năng của agent."""
@@ -92,21 +84,18 @@ class AdapterEngine:
             if dry_run:
                 return True, l["dry_run_msg"].format(source_info)
             try:
-                with open(newer_agent_rules, "r", encoding="utf-8") as f:
-                    content = f.read()
+                content = safe_sync_io.read_text(newer_agent_rules.parent, newer_agent_rules.name)
 
                 # Nếu là CLAUDE.md, bỏ phần header metadata tự sinh nếu có
                 if newer_agent_rules.name == "CLAUDE.md" and CLAUDE_HEADER_METADATA.strip() in content:
                     content = content.replace(CLAUDE_HEADER_METADATA, "").strip()
 
-                with open(lib_root_file, "w", encoding="utf-8") as f:
-                    f.write(content)
-
-                # Đồng bộ timestamp mtime để giữ tính nhất quán
                 agent_mtime = newer_agent_rules.stat().st_mtime
-                os.utime(lib_root_file, (agent_mtime, agent_mtime))
+                safe_sync_io.write_text(lib_root_file.parent, lib_root_file.name, content, mtime=agent_mtime)
 
                 return True, l["sync_ok_msg"].format(source_info)
+            except ValueError:
+                raise
             except Exception as e:
                 print(f"[AdapterEngine] Lỗi gom upstream rules: {e}")
 
@@ -131,8 +120,9 @@ class AdapterEngine:
 
         try:
             lib_mtime = source_agents_md.stat().st_mtime
-            with open(source_agents_md, "r", encoding="utf-8") as f:
-                rules_content = f.read()
+            rules_content = safe_sync_io.read_text(source_agents_md.parent, source_agents_md.name)
+        except ValueError:
+            raise
         except Exception as e:
             print(f"[AdapterEngine] Không thể đọc {source_agents_md}: {e}")
             return []
@@ -145,7 +135,7 @@ class AdapterEngine:
                 continue
 
             agent_dir = Path(agent_dir_str)
-            agent_dir.mkdir(parents=True, exist_ok=True)
+            safe_sync_io.ensure_directory(agent_dir)
 
             if agent_name in ["antigravity", "codex"]:
                 if agent_dir.name == "skills":
@@ -154,11 +144,11 @@ class AdapterEngine:
                     target_file = agent_dir / "AGENTS.md"
 
                 try:
-                    target_file.parent.mkdir(parents=True, exist_ok=True)
-                    with open(target_file, "w", encoding="utf-8") as f:
-                        f.write(rules_content)
-                    os.utime(target_file, (lib_mtime, lib_mtime))
+                    safe_sync_io.ensure_directory(target_file.parent)
+                    safe_sync_io.write_text(target_file.parent, target_file.name, rules_content, mtime=lib_mtime)
                     deployed_list.append(f"{agent_name} -> {target_file.name}")
+                except ValueError:
+                    raise
                 except Exception as e:
                     print(f"[AdapterEngine] Lỗi deploy AGENTS.md: {e}")
 
@@ -166,10 +156,10 @@ class AdapterEngine:
                 target_claude_file = agent_dir / "CLAUDE.md"
                 try:
                     claude_content = CLAUDE_HEADER_METADATA + rules_content
-                    with open(target_claude_file, "w", encoding="utf-8") as f:
-                        f.write(claude_content)
-                    os.utime(target_claude_file, (lib_mtime, lib_mtime))
+                    safe_sync_io.write_text(target_claude_file.parent, target_claude_file.name, claude_content, mtime=lib_mtime)
                     deployed_list.append(f"claude -> CLAUDE.md")
+                except ValueError:
+                    raise
                 except Exception as e:
                     print(f"[AdapterEngine] Lỗi deploy CLAUDE.md: {e}")
 

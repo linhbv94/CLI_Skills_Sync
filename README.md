@@ -1,5 +1,9 @@
 # Skills Auto Sync Tool (v2.2.0)
 
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg?style=flat-square)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows-0284c7?style=flat-square)](https://github.com/linhbv94/CLI_Skills_Sync)
+[![Ecosystem](https://img.shields.io/badge/part%20of-VXUtilities-0ea5e9?style=flat-square)](../_summary/master_overview.md)
+
 **Skills Auto Sync Tool** là ứng dụng dòng lệnh (CLI/Terminal) siêu nhẹ, chạy đa nền tảng (macOS & Windows), giúp tự động hóa việc quản lý và đồng bộ quy tắc (`AGENTS.md`) và thư viện kỹ năng (`skills/` folder) giữa các máy làm việc của người dùng và các AI Agents cục bộ (`Antigravity`, `Codex`, `Claude Code`).
 
 ---
@@ -131,3 +135,13 @@ Khi chạy ứng dụng dòng lệnh, bạn sẽ tương tác thông qua menu ph
 * **Tự động chặn file rác hệ điều hành:** Khi chạy, tool tự động kiểm tra xem Thư viện tổng đã có file `.gitignore` chưa. Nếu chưa có, tool tự tạo file `.gitignore` chuẩn để loại bỏ hoàn toàn `.DS_Store`, `Thumbs.db`, `desktop.ini` khỏi commits.
 * **Chặn đơ/treo tiến trình mật khẩu:** Cấu hình biến môi trường `GIT_TERMINAL_PROMPT=0` ngăn Git CLI đứng chờ nhập Username/Password khi chưa đăng nhập. Nếu lỗi xác thực, tool in cảnh báo `AUTH_ERROR` rõ ràng và tiếp tục chạy sync cục bộ.
 * **Hợp nhất tự động [m] (Auto Merge):** Khi có xung đột `DIVERGED` (ví dụ: vừa xóa file trên Git Web vừa sửa file ở máy local), người dùng nhấn phím **`m`** để tool tự động gộp lịch sử commits, chạy pull trộn dữ liệu và đẩy ngược lên Remote an toàn tuyệt đối.
+
+---
+
+## 6. Giấy phép & Bản quyền (License)
+
+Dự án được phân phối dưới giấy phép mã nguồn mở **MIT License**.  
+Xem toàn văn giấy phép tại tệp [LICENSE](LICENSE).
+
+Bản quyền © 2026 Viet Linh Bui. Đã đăng ký toàn bộ quyền.
+
